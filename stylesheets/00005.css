@@ -1,0 +1,22 @@
+#sContainer {
+    padding-bottom: 10px;
+    padding-top: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    box-shadow: 2px 2px 14px #828282;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.squareSmall {
+    /*display: inline-block;*/
+    width: 10px;
+    height: 10px;
+    margin: .5px;
+    background: #ddd;
+    float: left;
+}
+
+.squareSmall.cell {
+    background-color: #A61C39;
+}
