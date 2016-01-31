@@ -14,57 +14,37 @@
     fill: none;
     stroke: white;
     stroke-width: 1px;
-    /* stroke-dasharray: 2, 2;
-    stroke-linejoin: round;*/
 }
 
 .subdistrict_boundary {
     fill: none;
     stroke: #787878;
     stroke-width: .5px;
-    /* stroke-dasharray: 2, 2;
-    stroke-linejoin: round;*/
 }
 
 .tooltip {
-    width: 30px;
-    height: 30px;
-    fill: red;
+    padding: 4px;
+    position: absolute;
+    background-color: red;
+    display: inline-block;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    border: 2px solid #FFFFFF;
+    background: rgba(33, 29, 29, 0.6);
+    font-family: Arial, Helvetica, sans-serif;
+    color: #FFFFFF;
+    pointer-events: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
-
-
-/*.subunit.WLS {
-    fill: #cdd;
-}
-
-.subunit.NIR {
-    fill: #cdc;
-}
-
-.subunit.ENG {
-    fill: #dcd;
-}
-
-.subunit.IRL {
-    display: none;
-}
-
-.subunit-boundary {
-    fill: none;
-    stroke: #777;
-    stroke-dasharray: 2, 2;
-    stroke-linejoin: round;
-}
-
-.subunit-label {
-    fill: #777;
-    fill-opacity: .5;
-    font-size: 20px;
-    font-weight: 300;
-    text-anchor: middle;
-}*/
 
 #sContainer {
+    position: relative;
     width: 1000px;
     height: 800px;
     padding-bottom: 10px;
