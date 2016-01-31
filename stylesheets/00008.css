@@ -1,8 +1,39 @@
-/*.subunit.SCT {
-    fill: #ddc;
+.berlin.Tiergarten {
+    /*fill: red;*/
 }
 
-.subunit.WLS {
+.berlin:hover {
+    fill: green;
+}
+
+.berlin {
+    fill: #5C755C;
+}
+
+.district_boundary {
+    fill: none;
+    stroke: white;
+    stroke-width: 1px;
+    /* stroke-dasharray: 2, 2;
+    stroke-linejoin: round;*/
+}
+
+.subdistrict_boundary {
+    fill: none;
+    stroke: #787878;
+    stroke-width: .5px;
+    /* stroke-dasharray: 2, 2;
+    stroke-linejoin: round;*/
+}
+
+.tooltip {
+    width: 30px;
+    height: 30px;
+    fill: red;
+}
+
+
+/*.subunit.WLS {
     fill: #cdd;
 }
 
@@ -21,10 +52,8 @@
 .subunit-boundary {
     fill: none;
     stroke: #777;
-    /*stroke-dasharray: 2, 2;*/
-
-
-/*stroke-linejoin: round;
+    stroke-dasharray: 2, 2;
+    stroke-linejoin: round;
 }
 
 .subunit-label {
