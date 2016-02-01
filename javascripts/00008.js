@@ -1,15 +1,5 @@
 var width = 1000,
     height = 800;
-d3.select("#sContainer")
-    .attr("width", width)
-    .attr("height", height);
-
-d3.selection.prototype.moveToFront = function() {
-    return this.each(function() {
-        this.parentNode.appendChild(this);
-    });
-};
-
 var svg = d3.select("#sContainer").append("svg")
     .attr("width", width)
     .attr("height", height);
@@ -19,11 +9,11 @@ var projection = d3.geo.albers()
     .parallels([50, 60])
     .scale(135000)
     .translate([-24750, -3215]);
-
 var path = d3.geo.path()
     .projection(projection);
 
 tooltip = {
+    direction: 'right',
     obj: d3.select("#sContainer")
         .append('div')
         .attr('class', 'tooltip')
@@ -32,17 +22,35 @@ tooltip = {
             d3.event.preventDefault();
         })),
     updatePos: function(_x, _y) {
+        var r = tooltip.obj.node().getBoundingClientRect();
+        var xOffset = tooltip.direction === 'right' ? 30 : -r.width;
+        var yOffset = -r.height - 10;
         tooltip.obj
-            .style('left', (_x + 15) + 'px')
-            .style("top", (_y - 30) + "px");
+            .style('left', (_x + xOffset) + 'px')
+            .style("top", (_y + yOffset) + "px");
     },
-    updateLabel: function(_subdistrict, _district) {
+    updateLabel: function(_html_text) {
         tooltip.obj
-            .html(_subdistrict + ',</br>' + _district);
-    }
+            .html(_html_text);
+    },
+    show: function(_opacity) {
+        tooltip.obj.transition().duration(150).style('opacity', _opacity ? _opacity : 1);
+    },
+    hide: function() {
+        tooltip.obj.transition().style('opacity', 0);
+    },
 };
 
-d3.json("../mapdata/00008/berlin_build_by_OTEIL.json", function(error, map) {
+function getArea(_d) {
+    try {
+        return "</br> area: " + (parseFloat(_d.properties.FLAECHE_HA) / 100).toFixed(1) + "km<sup>2</sup>";
+    } catch (err) {
+        console.log("couldn\'t find area");
+    }
+    return '';
+}
+
+d3.json("../geodata/00008/berlin.json", function(error, map) {
     if (error) {
         return console.error(error);
     } else {
@@ -79,16 +87,14 @@ d3.json("../mapdata/00008/berlin_build_by_OTEIL.json", function(error, map) {
                 tooltip.updatePos(m[0], m[1]);
             })
             .on('mouseover', function(d) {
-                tooltip.obj
-                    .transition()
-                    .style('opacity', 1);
-
-                tooltip.updateLabel(d.id, d.properties.BEZIRK);
+                tooltip.direction = d3.event.layerX < width / 2 ? 'right' :
+                    'left';
+                tooltip.show();
+                tooltip.updateLabel(
+                    'subdistrict: ' + d.id + '</br>' + 'district: ' + d.properties.BEZIRK + getArea(d));
             })
             .on('mouseleave', function(d) {
-                tooltip.obj
-                    .transition()
-                    .style('opacity', 0);
+                tooltip.hide();
             });
     }
 });

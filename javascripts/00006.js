@@ -13,7 +13,7 @@ var projection = d3.geo.albers()
 var path = d3.geo.path()
     .projection(projection);
 
-d3.json("../mapdata/00006/uk.json", function(error, uk) {
+d3.json("../geodata/00006/uk.json", function(error, uk) {
     if (error) {
         return console.error(error);
     } else {
