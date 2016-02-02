@@ -36,7 +36,8 @@ var y = d3.scale.linear()
 
 var gr = d3.select("svg").on("click", click);
 
-var instructions = gr
+var instructions =
+    gr
     .append("g")
     .append("text")
     .text("click to add points, click on points to remove them")
@@ -44,9 +45,13 @@ var instructions = gr
     .attr("fill-opacity", "0.5")
     .attr("x", "85")
     .attr("y", "200")
-    .attr("style", "font-size:1.4em");
+    .attr("style", "font-size:1.4em")
+    // .style('user-select', 'none');
 
 function showInstructions() {
+    instructions
+        .style('visibility', 'visible')
+        .attr("fill-opacity", "0");
     instructions
         .transition()
         .attr("fill-opacity", "0.5");
@@ -55,7 +60,11 @@ function showInstructions() {
 function hideInstructions() {
     instructions
         .transition()
-        .attr("fill-opacity", "0");
+        .attr("fill-opacity", "0")
+        .each('end', function() {
+            d3.select(this)
+                .style('visibility', 'hidden');
+        });
 }
 
 

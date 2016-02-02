@@ -50,7 +50,7 @@ function getArea(_d) {
     return '';
 }
 
-d3.json("../geodata/00008/berlin.json", function(error, map) {
+d3.json("../data/00008/berlin.json", function(error, map) {
     if (error) {
         return console.error(error);
     } else {

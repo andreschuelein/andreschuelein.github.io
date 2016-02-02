@@ -26,3 +26,16 @@ h1 {
     -webkit-margin-after: 0em;
     color: #3D5193;
 }
+
+
+/*ul {
+    margin-left: auto;
+    margin-right: auto;
+}
+*/
+
+#list {
+    width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+}
