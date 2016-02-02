@@ -15,8 +15,8 @@ var data = [];
 var margin = {
     top: 20,
     right: 10,
-    bottom: 20,
-    left: 10
+    bottom: 45,
+    left: 45
 };
 var width = W - margin.left - margin.right,
     height = H - margin.top - margin.bottom;
@@ -33,6 +33,7 @@ var svg = d3.select("#sContainer")
 
 var x, y, c; //scales
 var xAxis, yAxis; //axis
+var xLabel, yLabel; //axis labels
 
 function start(cb) {
     d3.csv('../data/00009/platformdata.csv', function(err, d) {
@@ -77,11 +78,13 @@ function initScales(_a) {
     x = d3.scale
         .linear()
         .domain(_a.l)
-        .range([0, width]);
+        .range([0, width])
+        .nice();
     y = d3.scale
         .linear()
         .domain(_a.h)
-        .range([height, 0]);
+        .range([height, 0])
+        .nice();
     c = d3.scale.linear().
     domain(_a.h).range([COL2, COL3]);
     drawAxis();
@@ -94,7 +97,7 @@ function drawAxis() {
         .orient("bottom");
 
     svg.append("g")
-        .attr("class", "x axis")
+        .attr("class", "axis")
         .attr("transform", "translate(0," + height + ")")
         .call(xAxis);
 
@@ -104,15 +107,27 @@ function drawAxis() {
         .orient("left");
 
     svg.append("g")
-        .attr("class", "y axis")
-        .attr("transform", "translate(0," + width + ")")
+        .attr("class", "axis")
+        .attr("transform", "translate(0,0)")
         .call(yAxis);
+
+    yLabel = svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margin.left)
+        .attr("x", 0 - (height / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text("height of platform edge (in cm)");
+
+    xLabel = svg.append("text")
+        .attr("transform", "translate(" + (width / 2) + " ," + (height + margin.bottom * 0.75) + ")")
+        .style("text-anchor", "middle")
+        .text("net platform length (in m)");
 
 }
 
 function drawData(_data) {
-    svg
-        .selectAll("g")
+    svg.selectAll("g")
         .data(_data)
         .enter()
         .append('circle')
