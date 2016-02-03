@@ -164,7 +164,9 @@ function update() {
 function classifyData() {
     generateSeeds(numOfClasses);
     ///LOOP
-    iterate();
+    for (var it = 0; it < 1000; it++) {
+        iterate();
+    }
     drawData();
 }
 
@@ -228,7 +230,7 @@ function computeClusterDistance() { // requires for each class to have a cluster
         var dist = H + W;
 
         clusters.forEach(function(cluster, classIndex) {
-            var distance = Math.sqrt(Math.pow(datum[0] - cluster[0], 2) + Math.pow(datum[0] - cluster[0], 2));
+            var distance = Math.sqrt(Math.pow(datum[0] - cluster[0], 2) + Math.pow(datum[1] - cluster[1], 2));
             if (distance < dist) {
                 dist = distance;
                 datum[2] = classIndex;
