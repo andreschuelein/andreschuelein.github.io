@@ -45,8 +45,7 @@ var instructions =
     .attr("fill-opacity", "0.5")
     .attr("x", "85")
     .attr("y", "200")
-    .attr("style", "font-size:1.4em")
-    // .style('user-select', 'none');
+    .attr("style", "font-size:1.4em");
 
 function showInstructions() {
     instructions
