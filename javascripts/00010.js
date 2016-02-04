@@ -39,7 +39,28 @@ var x = d3.scale.linear()
 var y = d3.scale.linear()
     .range([height, 0]);
 
-var cButton = d3.select('.header').append('div').append('button').text('classify data').attr('disabled', true).on('click', cBClick);
+
+
+var cDiv = d3.select('body')
+    .append('div')
+    .attr('class', 'controls')
+    .style('width', W - 30 + 'px')
+    .style('height', '150px')
+    .style('margin-top', '20px')
+    .style('margin-left', 'auto')
+    .style('margin-right', 'auto')
+    .style('margin-bottom', 'auto')
+    .style('padding', '20px 25px 10px 25px')
+    .style('background-color', '#D0D0D0')
+    .append('h3')
+    .attr('class', 'controls_header')
+    .text('controls');
+
+var cButton = d3.selectAll('.controls') //d3.select('.header')
+    .append('div').append('button').text('classify data').attr('disabled', true).on('click', cBClick);
+
+var resetButton = d3.selectAll('.controls')
+    .append('div').append('button').text('reset data').attr('disabled', true).on('click', resetClick);
 
 var gr = d3.select("svg").on("click", click);
 
@@ -48,6 +69,7 @@ var instructions = {
     line1: gr
         .append("g")
         .append("text")
+        .attr('class', 'instuctions')
         .text("click to add points, click on points to remove them")
         .attr("fill", "black")
         .attr("fill-opacity", "0.5")
@@ -57,6 +79,7 @@ var instructions = {
     line2: gr
         .append("g")
         .append("text")
+        .attr('class', 'instuctions')
         .text("press the button to classify your data points")
         .attr("fill", "black")
         .attr("fill-opacity", "0.5")
@@ -107,8 +130,18 @@ function click(_e) {
     update();
 }
 
+function resetClick(_e) {
+    resetData();
+    resetButton.attr('disabled', true);
+}
+
+function resetData() {
+    d3.selectAll('circle').remove();
+    data = [];
+    update();
+}
+
 function cBClick(_e) {
-    //console.log(data.length);
     classifyData();
 }
 
@@ -118,8 +151,10 @@ d3.selection.prototype.moveToFront = function() {
     });
 };
 
+
 function setMark(_cx, _cy, _r, _gr, color) {
     _gr.append("circle")
+        .attr('class', 'circle')
         .attr("cx", _cx)
         .attr("cy", _cy)
         .attr("r", _r)
@@ -151,7 +186,7 @@ function _findIndex(_array, _point) {
 }
 
 function update() {
-    // console.log(data.length);
+    resetButton.attr('disabled', data.length > 0 ? null : true);
     cButton.attr('disabled', data.length > 1 ? null : true);
     if (data.length > 0) {
 
@@ -225,7 +260,11 @@ function computeClusters() {
     // console.log('clusters: ' + clusters);
 }
 
-function computeClusterDistance() { // requires for each class to have a cluster
+function computeClusterDistance() {
+    // 1-mean clustering
+    // TODO k-mean clustering
+
+    // requires for each class to have a cluster
     data.forEach(function(datum) {
         var dist = H + W;
 
@@ -238,6 +277,22 @@ function computeClusterDistance() { // requires for each class to have a cluster
         });
 
     });
+
+    // var newData = data;
+    // newData.forEach(function(datum, datumIndex) {
+    //     var dist = H + W;
+
+    //     data.forEach(function(dat, datIndex) {
+    //         var distCollection = [];
+    //         var distance = Math.sqrt(Math.pow(datum[0] - dat[0], 2) + Math.pow(datum[1] - dat[1], 2));
+    //         if (distance < dist && datumIndex !== datIndex) {
+    //             dist = distance;
+    //             datum[2] = classIndex;
+    //         }
+    //     });
+
+    // });
+    // data = newData;
 }
 
 
