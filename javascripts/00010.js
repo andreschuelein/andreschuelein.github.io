@@ -1,24 +1,28 @@
 // linear regression in d3.js
-// 
-var R = 7; //radius
-var COL1 = "#24588E";
-var COL2 = "#F41313";
-var COL3 = "#7801A9";
-var COL4 = "#FFEA00";
-var H = 450;
-var W = 600;
+// jshint esnext:true
+
+const R = 7; //radius
+const COL1 = "#24588E";
+const COL2 = "#F41313";
+const COL3 = "#7801A9";
+const COL4 = "#FFEA00";
+const H = 450;
+const W = 600;
 var hoverActive = false;
 var data = [];
-var lineDrawn = false;
+var newData = [];
+//var lineDrawn = false;
 var margin = {
     top: 20,
     right: 10,
     bottom: 20,
     left: 10
 };
-var numOfClasses = 2;
-var numOfNeighbours = 1;
+var numOfClasses = 10;
+var numOfIterations = 1000;
+// var numOfNeighbours = 1;
 var clusters = [];
+var k = 4;
 
 var width = W - margin.left - margin.right,
     height = H - margin.top - margin.bottom;
@@ -198,8 +202,9 @@ function update() {
 
 function classifyData() {
     generateSeeds(numOfClasses);
+    // drawData();
     ///LOOP
-    for (var it = 0; it < 1000; it++) {
+    for (var it = 0; it < numOfIterations; it++) {
         iterate();
     }
     drawData();
@@ -224,12 +229,27 @@ function classColor(_classIndex) {
 }
 
 function generateSeeds(_n) {
-    // TODO generate good initial seeds, for example find points close to corners
-    data.forEach(function(d) {
-        d[2] = null;
+    var inject = null;
+    inject = [];
+    var positions = [];
+    for (var t = 0; t < data.length; t++) {
+        positions[t] = t;
+    }
+    for (var p = 0; p < numOfClasses; p++) {
+        var rndNum = Math.floor(positions.length * Math.random());
+        inject[p] = positions[rndNum];
+        positions.splice(rndNum, 1);
+    }
+    data.forEach(function(d, i) {
+        d[2] = inject.indexOf(i) >= 0 ? inject.indexOf(i) : Math.floor(numOfClasses * Math.random());
     });
-    data[0][2] = 0;
-    data[1][2] = 1;
+    // data.forEach(d => console.log(d[2]));
+}
+
+function iterate() {
+    initClusters();
+    computeClusters();
+    computeClusterDistance(); //for each cluster
 }
 
 function initClusters() {
@@ -237,12 +257,6 @@ function initClusters() {
     for (var k = 0; k < numOfClasses; k++) {
         clusters.push([0, 0, 0]); // x/y/cluster size
     }
-}
-
-function iterate() {
-    initClusters();
-    computeClusters();
-    computeClusterDistance(); //for each cluster
 }
 
 function computeClusters() {
@@ -278,6 +292,7 @@ function computeClusterDistance() {
 
     });
 
+
     // var newData = data;
     // newData.forEach(function(datum, datumIndex) {
     //     var dist = H + W;
@@ -296,5 +311,51 @@ function computeClusterDistance() {
 }
 
 
-// TODO MARK CLUSTERS
-//
+// function iterate() {
+//     newData = data;
+//     newData.forEach(function(_nD, _nI) {
+//         classifyPoint(_nD[0], _nD[1], k, _nI);
+//     });
+//     data = newData;
+// }
+
+// function classifyPoint(_x, _y, _k, _index)
+// // _x,_y coordinates of the point the should be classified
+// // _k as in knn
+// // _i index of the point that should be classified in array.data
+// {
+//     var kList = [];
+//     data.forEach(function(_d, _i) {
+//         if (kList.length !== 0) {
+//             var _pos = 0;
+//             var _dist = 0;
+//             while (_pos < kList.length) {
+//                 _dist = distance(_x, _y, _d[0], _d[1]);
+//                 if (kList[_pos][0] >= _dist) {
+//                     break;
+//                 } else {
+//                     _pos++;
+//                 }
+//             }
+//             kList.splice(_pos, 0, [_dist, _d[2]]);
+//         } else { // push initial element
+//             kList.push([distance(_x, _y, _d[0], _d[1]), _d[2]]);
+//         }
+//     });
+//     // evaluate kList
+//     var classHist = [];
+//     for (var _r = 0; _r < numOfClasses; _r++) {
+//         classHist[_r] = 0;
+//     }
+//     for (var _kk = 0; _kk < _k; _kk++) {
+//         classHist[kList[_kk][1]]++;
+//     }
+//     newData[_index][2] = classHist.indexOf(Math.max(...classHist));
+// }
+
+// function distance(x1, y1, x2, y2) {
+//     if (x1 && y1 && x2 && y2) {
+//         return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+//     }
+//     return null;
+// }
