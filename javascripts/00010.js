@@ -18,7 +18,7 @@ var margin = {
     bottom: 20,
     left: 10
 };
-var numOfClasses = 10;
+var numOfClasses = 2;
 var numOfIterations = 1000;
 // var numOfNeighbours = 1;
 var clusters = [];
@@ -43,28 +43,53 @@ var x = d3.scale.linear()
 var y = d3.scale.linear()
     .range([height, 0]);
 
+var sliderObj = d3.slider()
+    .axis(true)
+    .min(2)
+    .max(10)
+    .step(1)
+    .value(numOfClasses)
+    .on('slide', function(_e, _val) {
+        controlPanel.setClassText(_val);
+        numOfClasses = _val;
+    });
 
+var controlPanel = {
+    obj: d3.select('body')
+        .append('div')
+        .attr('class', 'controls')
+        .style('width', W - 30 + 'px'),
+    cHeader: d3.select('.controls')
+        .append('h3')
+        .attr('class', 'controls_header')
+        .text('controls'),
+    cButton: d3.select('.controls') //d3.select('.header')
+        .append('div')
+        .append('button')
+        .attr('id', 'classify')
+        .text('classify data')
+        .attr('disabled', true)
+        .on('click', cBClick),
+    resetButton: d3.select('.controls')
+        .append('div')
+        .append('button')
+        .attr('id', 'reset')
+        .text('reset data')
+        .attr('disabled', true)
+        .on('click', resetClick),
 
-var cDiv = d3.select('body')
-    .append('div')
-    .attr('class', 'controls')
-    .style('width', W - 30 + 'px')
-    .style('height', '150px')
-    .style('margin-top', '20px')
-    .style('margin-left', 'auto')
-    .style('margin-right', 'auto')
-    .style('margin-bottom', 'auto')
-    .style('padding', '20px 25px 10px 25px')
-    .style('background-color', '#D0D0D0')
-    .append('h3')
-    .attr('class', 'controls_header')
-    .text('controls');
-
-var cButton = d3.selectAll('.controls') //d3.select('.header')
-    .append('div').append('button').text('classify data').attr('disabled', true).on('click', cBClick);
-
-var resetButton = d3.selectAll('.controls')
-    .append('div').append('button').text('reset data').attr('disabled', true).on('click', resetClick);
+    classSlider: d3.select('.controls')
+        .append('div')
+        .attr('class', 'slider')
+        .call(sliderObj),
+    classText: d3.select('.controls')
+        .append('div')
+        .attr('class', 'class_text')
+        .html("number of classes: " + sliderObj.value()),
+    setClassText: function(classValue) {
+        controlPanel.classText.html("number of classes: " + classValue);
+    }
+};
 
 var gr = d3.select("svg").on("click", click);
 
@@ -136,7 +161,7 @@ function click(_e) {
 
 function resetClick(_e) {
     resetData();
-    resetButton.attr('disabled', true);
+    controlPanel.resetButton.attr('disabled', true);
 }
 
 function resetData() {
@@ -190,8 +215,8 @@ function _findIndex(_array, _point) {
 }
 
 function update() {
-    resetButton.attr('disabled', data.length > 0 ? null : true);
-    cButton.attr('disabled', data.length > 1 ? null : true);
+    controlPanel.resetButton.attr('disabled', data.length > 0 ? null : true);
+    controlPanel.cButton.attr('disabled', data.length > 1 ? null : true);
     if (data.length > 0) {
 
     } else {

@@ -15,7 +15,7 @@ button {
 }
 
 .circle {
-   /* stroke: black;
+    /* stroke: black;
  stroke-width: 1px;
 */
 }
@@ -28,7 +28,22 @@ svg text {
     pointer-events: none;
 }
 
+.controls {
+    display: flex;
+    flex-flow: row wrap;
+    min-height: 100px;
+    margin-top: 20px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: auto;
+    padding: 20px 25px 10px 25px;
+    background-color: #D0D0D0;
+}
+
 .controls_header {
+    order: -1;
+    flex: 0 1 50%;
+    self-align: start;
     pointer-events: none;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -36,4 +51,35 @@ svg text {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+}
+
+#reset {
+    order: 3;
+    alight-self: end;
+    flex: 0 1;
+    /*color: red;*/
+}
+
+#classify {
+    order: 2;
+    alight-self: end;
+    flex: 0 1;
+    /*color: green;*/
+}
+
+div.slider {
+    order: 5;
+    flex: 0 1;
+    /*alight-self: end;*/
+    position: inline;
+    margin-top: 5px;
+    margin-bottom: 25px;
+    margin-left: 20px;
+    margin-right: 20px;
+    min-width: 250px;
+    background: #7C7C7C;
+}
+
+div.class_text {
+    order: 4;
 }

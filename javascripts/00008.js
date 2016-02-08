@@ -8,11 +8,11 @@ var projection = d3.geo.albers()
     .rotate([4.4, 0])
     .parallels([50, 60])
     .scale(135000)
-    .translate([-24750, -3215]);
+    .translate([-24750, -3215]); //TODO fix this with getBoundingClientRect
 var path = d3.geo.path()
     .projection(projection);
 
-tooltip = {
+var tooltip = {
     direction: 'right',
     obj: d3.select("#sContainer")
         .append('div')
