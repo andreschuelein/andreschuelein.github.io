@@ -12,7 +12,18 @@
 button {
     width: 100px;
     margin: 3px 3px 3px 0px;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
+
+
+/*button text::selection {
+    background: none;
+}*/
 
 .circle {
     /* stroke: black;

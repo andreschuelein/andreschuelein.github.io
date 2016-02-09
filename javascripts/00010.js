@@ -1,17 +1,30 @@
-// linear regression in d3.js
+// k-means clustering in d3.js
+// 
 // jshint esnext:true
 
 const R = 7; //radius
-const COL1 = "#24588E";
-const COL2 = "#F41313";
+const COL1 = "#FFFFFF";
+const COL2 = "#050505";
 const COL3 = "#7801A9";
 const COL4 = "#FFEA00";
 const H = 450;
 const W = 600;
+const CSPACE = ["#FF2400", "#00AEFF", "#00FF06", "#1800FF", "#FFDE00", "#FF00B4", "#00FFA8", "#6A3900", "#304F00", "#717171"];
+const S = {
+    cMin: 2, //min number of clusters
+    cMax: 10, //max number of clusters
+    sMin: 5, //min cluster size
+    sMax: 40, //max cluster size
+    stdMin: 10, //min standard deviation
+    stdMax: 60, //max standard deviatioon
+    hMin: 20,
+    hMax: H - 20,
+    wMin: 20,
+    wMax: W - 20
+};
 var hoverActive = false;
 var data = [];
 var newData = [];
-//var lineDrawn = false;
 var margin = {
     top: 20,
     right: 10,
@@ -20,7 +33,6 @@ var margin = {
 };
 var numOfClasses = 2;
 var numOfIterations = 1000;
-// var numOfNeighbours = 1;
 var clusters = [];
 var k = 4;
 
@@ -63,7 +75,7 @@ var controlPanel = {
         .append('h3')
         .attr('class', 'controls_header')
         .text('controls'),
-    cButton: d3.select('.controls') //d3.select('.header')
+    cButton: d3.select('.controls')
         .append('div')
         .append('button')
         .attr('id', 'classify')
@@ -74,10 +86,15 @@ var controlPanel = {
         .append('div')
         .append('button')
         .attr('id', 'reset')
-        .text('reset data')
+        .text('clear all')
         .attr('disabled', true)
         .on('click', resetClick),
-
+    spawnButton: d3.select('.controls')
+        .append('div')
+        .append('button')
+        .attr('id', 'spawn')
+        .text('spawn random data')
+        .on('click', spawnClick),
     classSlider: d3.select('.controls')
         .append('div')
         .attr('class', 'slider')
@@ -174,20 +191,58 @@ function cBClick(_e) {
     classifyData();
 }
 
+function nrandomPair(mean, std) {
+    // using Marsaglia polar method
+    mean = mean ? mean : [0, 0];
+    std = std ? ((std[0] > 0) && (std[1] > 0) ? std : [1, 1]) : [1, 1];
+    var _x, _y, _r, _s;
+    do {
+        _x = 2 * Math.random() - 1;
+        _y = 2 * Math.random() - 1;
+        _r = _x * _x + _y * _y;
+    } while (_r >= 1 || _r === 0);
+    _s = Math.sqrt(-2 * Math.log(_r) / _r);
+    return [mean[0] + _x * std[0] * _s, mean[1] + _y * std[1] * _s];
+}
+
+function spawnClick() {
+    instructions.hide();
+    var numClusters = S.cMin + Math.floor(Math.random() * (S.cMax - S.cMin));
+    for (var _numC = 0; _numC < numClusters; _numC++) {
+        var stdCluster = [];
+        var meanCluster = [];
+        var _p = []; //point
+        var sizeCluster = S.sMin + Math.floor(Math.random() * (S.sMax - S.sMin));
+        stdCluster[0] = S.stdMin + Math.floor(Math.random() * (S.stdMax - S.stdMin));
+        stdCluster[1] = S.stdMin + Math.floor(Math.random() * (S.stdMax - S.stdMin));
+        meanCluster[0] = S.wMin + Math.floor(Math.random() * (S.wMax - S.wMin));
+        meanCluster[1] = S.hMin + Math.floor(Math.random() * (S.hMax - S.hMin));
+        for (var _sizeC = 0; _sizeC < sizeCluster; _sizeC++) {
+            _p = nrandomPair(meanCluster, stdCluster);
+            if (_p[0] >= 0 && _p[0] < W && _p[1] >= 0 && _p[1] < H) {
+                data.push(_p);
+                setMark(_p[0], _p[1], R, gr, COL1);
+            }
+        }
+    }
+    update();
+}
+
+
 d3.selection.prototype.moveToFront = function() {
     return this.each(function() {
         this.parentNode.appendChild(this);
     });
 };
 
-
 function setMark(_cx, _cy, _r, _gr, color) {
     _gr.append("circle")
-        .attr('class', 'circle')
+        .attr('class', 'mark')
         .attr("cx", _cx)
         .attr("cy", _cy)
         .attr("r", _r)
         .attr("fill", color)
+        .attr('stroke', "#000000")
         .on("mouseover", function() {
             d3.select(this).attr("fill", COL2);
         })
@@ -217,40 +272,31 @@ function _findIndex(_array, _point) {
 function update() {
     controlPanel.resetButton.attr('disabled', data.length > 0 ? null : true);
     controlPanel.cButton.attr('disabled', data.length > 1 ? null : true);
-    if (data.length > 0) {
-
-    } else {
+    if (data.length > 0) {} else {
         instructions.show();
     }
-    d3.selectAll("circle").moveToFront();
+    d3.selectAll(".mark").moveToFront();
 }
 
 function classifyData() {
     generateSeeds(numOfClasses);
-    // drawData();
-    ///LOOP
     for (var it = 0; it < numOfIterations; it++) {
         iterate();
     }
     drawData();
+    drawClusters();
+    update();
 }
 
 function drawData() {
     d3.selectAll('circle').remove();
-    // gr.data(data).enter().call(function(d, i) {
-    //     console.log(data, d, i);
-    //     return 0;
-    // });
     data.forEach(function(d) {
         setMark(d[0], d[1], R, gr, classColor(d[2]));
     });
 }
 
 function classColor(_classIndex) {
-    var c = d3.scale.linear().
-    domain([0, numOfClasses - 1]).range([COL3, COL4]);
-
-    return c(_classIndex);
+    return _classIndex !== null ? CSPACE[_classIndex] : '#FFFFFF';
 }
 
 function generateSeeds(_n) {
@@ -266,9 +312,9 @@ function generateSeeds(_n) {
         positions.splice(rndNum, 1);
     }
     data.forEach(function(d, i) {
-        d[2] = inject.indexOf(i) >= 0 ? inject.indexOf(i) : Math.floor(numOfClasses * Math.random());
+        // d[2] = inject.indexOf(i) >= 0 ? inject.indexOf(i) : Math.floor(numOfClasses * Math.random());
+        d[2] = inject.indexOf(i) >= 0 ? inject.indexOf(i) : null;
     });
-    // data.forEach(d => console.log(d[2]));
 }
 
 function iterate() {
@@ -296,14 +342,24 @@ function computeClusters() {
             d[1] /= d[2];
         }
     });
-    // console.log('clusters: ' + clusters);
+}
+
+function drawClusters() {
+    d3.selectAll('.cluster').remove();
+    clusters.forEach(markCluster);
+}
+
+function markCluster(_cluster, _index) {
+    gr.append("circle")
+        .attr('class', 'circle')
+        .attr("cx", _cluster[0])
+        .attr("cy", _cluster[1])
+        .attr("r", R * 5)
+        .attr("fill", CSPACE[_index])
+        .style("opacity", 0.3);
 }
 
 function computeClusterDistance() {
-    // 1-mean clustering
-    // TODO k-mean clustering
-
-    // requires for each class to have a cluster
     data.forEach(function(datum) {
         var dist = H + W;
 
@@ -316,23 +372,6 @@ function computeClusterDistance() {
         });
 
     });
-
-
-    // var newData = data;
-    // newData.forEach(function(datum, datumIndex) {
-    //     var dist = H + W;
-
-    //     data.forEach(function(dat, datIndex) {
-    //         var distCollection = [];
-    //         var distance = Math.sqrt(Math.pow(datum[0] - dat[0], 2) + Math.pow(datum[1] - dat[1], 2));
-    //         if (distance < dist && datumIndex !== datIndex) {
-    //             dist = distance;
-    //             datum[2] = classIndex;
-    //         }
-    //     });
-
-    // });
-    // data = newData;
 }
 
 
