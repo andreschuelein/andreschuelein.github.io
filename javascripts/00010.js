@@ -22,6 +22,7 @@ const S = {
     wMin: 20,
     wMax: W - 20
 };
+const dataLimit = 800;
 var hoverActive = false;
 var data = [];
 var newData = [];
@@ -67,7 +68,7 @@ var sliderObj = d3.slider()
     });
 
 var controlPanel = {
-    obj: d3.select('body')
+    obj: d3.select('main')
         .append('div')
         .attr('class', 'controls')
         .style('width', W - 30 + 'px'),
@@ -218,10 +219,12 @@ function spawnClick() {
         meanCluster[0] = S.wMin + Math.floor(Math.random() * (S.wMax - S.wMin));
         meanCluster[1] = S.hMin + Math.floor(Math.random() * (S.hMax - S.hMin));
         for (var _sizeC = 0; _sizeC < sizeCluster; _sizeC++) {
-            _p = nrandomPair(meanCluster, stdCluster);
-            if (_p[0] >= 0 && _p[0] < W && _p[1] >= 0 && _p[1] < H) {
-                data.push(_p);
-                setMark(_p[0], _p[1], R, gr, COL1);
+            if (data.length < dataLimit) {
+                _p = nrandomPair(meanCluster, stdCluster);
+                if (_p[0] >= 0 && _p[0] < W && _p[1] >= 0 && _p[1] < H) {
+                    data.push(_p);
+                    setMark(_p[0], _p[1], R, gr, COL1);
+                }
             }
         }
     }
@@ -272,6 +275,7 @@ function _findIndex(_array, _point) {
 function update() {
     controlPanel.resetButton.attr('disabled', data.length > 0 ? null : true);
     controlPanel.cButton.attr('disabled', data.length > 1 ? null : true);
+    controlPanel.spawnButton.attr('disabled', data.length >= dataLimit ? true : null);
     if (data.length > 0) {} else {
         instructions.show();
     }

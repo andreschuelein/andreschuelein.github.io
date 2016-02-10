@@ -450,7 +450,7 @@ function start() {
     var dropDownList = ["choose seed:", "random", "glider", "Lightweight spaceship",
         "Oscillators"
     ];
-    var selector = d3.select(".header")
+    var selector = d3.select("main")
         .append("div")
         .append("select")
         .selectAll("option")
