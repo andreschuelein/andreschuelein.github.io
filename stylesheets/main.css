@@ -28,7 +28,7 @@ header {
 
 main {
     order: 2;
-    flex: 1 1 850px;
+    flex: 10 1 850px;
     min-height: 600px;
 }
 
@@ -37,13 +37,12 @@ main {
     display: flex;
     flex-flow: row wrap;
     justify-content: space-between;
-    padding:20px;
-
+    padding: 20px;
 }
 
 aside {
     order: 3;
-    flex: 1 1 150px;
+    flex: 1 1 10px;
 }
 
 nav {
@@ -60,59 +59,64 @@ footer {
 
 @media all and (min-width: 1300px) {
     nav {
-        flex: 1 1 200px;
+        flex: 1 1 10px;
     }
 }
 
 .previewbox {
     border: 1px solid #5B5B5B;
-    padding: 5px;
+    /*padding: 5px;*/
     background-color: white;
     margin: 2px 2px 2px 2px;
     flex: 1 1 300px;
     min-width: 0;
+    max=width: 300px;
     overflow: hidden;
     position: relative;
-    z-index: 1;
+    /*z-index: 1;*/
 }
 
-.previewbox:empty{
-    opacity:0;
+.previewbox:empty {
+    opacity: 0;
     border: none;
-    height:0;
+    height: 0;
 }
 
 .previewimage {
-    z-index: 2;
-    max-width:300px;
-    height: auto;
+    /*z-index: 2;*/
+    max-width: 300px;
+    /*height: auto;*/
+}
+
+.previewimagebox {
+    max-width: 300px;
+    height: 250px;
 }
 
 .previewtextbox {
-    z-index: 3;
-
+    /*z-index: 3;*/
     position: absolute;
     bottom: 0;
-    right:0;
-    margin-left:auto;
-    margin-right:auto;
-    width:100%;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
     text-align: right;
     padding: 0px 0px 5px 0px;
-    background-color: rgba(0,0,0,0.8);
-    -webkit-box-shadow: 0px 0px 20px 10px rgba(0,0,0,0.8);
-    -moz-box-shadow: 0px 0px 20px 10px rgba(0,0,0,0.8);
-    box-shadow: 0px 0px 20px 10px rgba(0,0,0,0.8);
+    background-color: rgba(0, 0, 0, 0.8);
+    -webkit-box-shadow: 0px 0px 20px 10px rgba(0, 0, 0, 0.8);
+    -moz-box-shadow: 0px 0px 20px 10px rgba(0, 0, 0, 0.8);
+    box-shadow: 0px 0px 20px 10px rgba(0, 0, 0, 0.8);
 }
 
 .previewtext {
     color: white;
     font-family: 'PT Sans', sans-serif;
     font-size: 24px;
-    opacity:1;
-    margin-left:auto;
-    margin-right:auto;
-    width:95%;
+    opacity: 1;
+    margin-left: auto;
+    margin-right: auto;
+    width: 95%;
 }
 
 #sContainer {
@@ -126,61 +130,59 @@ footer {
     font-family: 'Lato', sans-serif;
 }
 
-.blogbox  {
- max-width: 800px;
- margin: 70px auto 20px auto;
-position: relative;
-text-align:justify;
-font-size: 22px;
+.blogbox {
+    max-width: 800px;
+    margin: 70px auto 20px auto;
+    position: relative;
+    text-align: justify;
+    font-size: 22px;
 }
 
 .blogboxtitle {
- max-width: 800px;
- margin: 70px auto 20px auto;
-position: relative;
-text-align:justify;
-font-size: 22px;
+    max-width: 800px;
+    margin: 70px auto 20px auto;
+    position: relative;
+    text-align: justify;
+    font-size: 22px;
 }
 
 .blogboxdate {
     font-size: 16px;
     position: absolute;
-    right:0;
-
+    right: 0;
 }
 
-.blogaside-left{
+.blogaside-left {
     margin: 15px 15px 15px 0;
     padding: 3px;
     font-family: 'PT Sans', sans-serif;
-    font-size:  15px;
-    left:-250px;
-    width:200px;
+    font-size: 20px;
+    left: -250px;
+    width: 200px;
     position: absolute;
-    text-align:justify;
-
+    text-align: justify;
 }
 
-.blogaside-right{
+.blogaside-right {
     margin: 15px 0px 15px 15px;
     padding: 3px;
     font-family: 'PT Sans', sans-serif;
-    font-size:  15px;
-    right:-250px;
-    width:200px;
+    font-size: 20px;
+    right: -250px;
+    width: 200px;
     position: absolute;
-    text-align:justify;
+    text-align: justify;
 }
 
-@media all and (max-width:1300px){
-    .blogaside-left{
+@media all and (max-width:1350px) {
+    .blogaside-left {
         float: left;
         position: static;
         border-style: solid;
         border-width: 1px;
         border-color: #595959;
     }
-    .blogaside-right{
+    .blogaside-right {
         float: right;
         position: static;
         border-style: solid;
@@ -190,40 +192,69 @@ font-size: 22px;
 }
 
 .blogannotation {
-    margin-top:40px;
+    margin-top: 40px;
     font-size: 20px;
 }
 
-.blogannotation li:target, .blognotemark:target {
-        background-color: #B7B7B7;
-    }
+.blogannotation li:target,
+.blognotemark:target {
+    background-color: #B7B7B7;
+}
 
-.blogannotation a:visited, .blognotemark a:visited, header > a:visited, #backtotop a:visited, #backtotop-main a:visited, #gitlink:visited {
-    color:black;
+.blogannotation a:visited,
+.blognotemark a:visited,
+header > a:visited,
+#backtotop a:visited,
+#backtotop-main a:visited,
+#gitlink:visited {
+    color: black;
     text-decoration: none;
 }
 
-.blogannotation a, .blognotemark a, header a, #backtotop a, #backtotop-main a, #gitlink {
-text-decoration: none;
-}
-
-.blogannotation a:hover, .blognotemark a:hover, header a:hover, #backtotop a:hover,#backtotop-main a:hover, #gitlink:hover {
-text-decoration: underline;
+.blogannotation a,
+.blognotemark a,
+header a,
+#backtotop a,
+#backtotop-main a,
+#gitlink {
+    text-decoration: none;
+    color: black;
 }
 
 #backtotop {
     position: absolute;
-    right:0px;
+    right: 0px;
     bottom: 0px;
 }
 
 #backtotop-main {
-    float:right;
+    float: right;
     font-size: 20px;
 }
 
+.blogannotation a:hover,
+.blognotemark a:hover,
+header a:hover,
+#backtotop a:hover,
+#backtotop-main a:hover,
+#gitlink:hover {
+    text-decoration: underline;
+    color: black;
+}
+
+.blogannotation a:active,
+.blognotemark a:active,
+header a:active,
+#backtotop a:active,
+#backtotop-main a:active,
+#gitlink:active {
+    text-decoration: underline;
+    color: #BCBCBC;
+    background-color: #3C3C3C;
+}
+
 #giticon {
-    height :15px;
+    height: 15px;
     width: 15px;
-    margin-left:20px;
+    margin-left: 20px;
 }
