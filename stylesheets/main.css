@@ -33,7 +33,6 @@ main {
 }
 
 .maincontainer {
-    background=red;
     display: flex;
     flex-flow: row wrap;
     justify-content: space-between;
@@ -138,18 +137,32 @@ footer {
     font-size: 22px;
 }
 
-.blogboxtitle {
+.blogboxtitlebox {
     max-width: 800px;
     margin: 70px auto 20px auto;
     position: relative;
-    text-align: justify;
+    text-align: left;
     font-size: 22px;
+    display: flex;
+    flex-flow: row;
+    flex-wrap:nowrap;
+    justify-content: space-between;
 }
 
 .blogboxdate {
     font-size: 16px;
-    position: absolute;
-    right: 0;
+    /*position: absolute;*/
+    /*right: 0;*/
+    order:2;
+    flex:0 0 150px;
+    align-self: flex-end;
+    margin-left: 30px;
+}
+
+.blogboxtitle {
+    flex: 1 1;
+    order:1;
+    max-width:800px;
 }
 
 .blogaside-left {

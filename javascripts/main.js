@@ -1,5 +1,5 @@
 // jshint esnext:true
-const data = ["00010", "00008", "00009", "00005", "00007", "00004", "00006"];
+const data = ["00011","00010", "00008", "00009", "00005", "00007", "00004", "00006"];
 var stateMouseOver = false;
 const baseSize = [450, 400]; //x,y
 const p = 0.3; // padding ratio for moveover display
