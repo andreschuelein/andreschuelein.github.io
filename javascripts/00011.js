@@ -15,10 +15,11 @@ var path = d3.geo.path()
     .projection(projection);
 const COL1 = "#B4B4B4";
 // const COLS = ['#2b83ba', '#abdda4', '#ffffbf', '#fdae61', '#d7191c']; // thanks to http://colorbrewer2.org/
-// var colScale = d3.scale.linear().domain([0, 10000, 20000, 30000, 40000]).range(COLS);
+// var colScale1 = d3.scale.linear().domain([0, 10000, 20000, 30000, 40000]).range(COLS);
 
-const COLS = ['#ffffb2','#fed976','#feb24c','#fd8d3c','#fc4e2a','#e31a1c','#b10026'];
-var colScale = d3.scale.linear().domain([1000, 5000, 10000, 20000, 30000,40000,50000]).range(COLS);
+const COLS1 = ['#ffffb2','#fed976','#feb24c','#fd8d3c','#fc4e2a','#e31a1c','#b10026'];
+const DOMAIN1=[1000, 5000, 10000, 20000, 30000,40000,50000];
+var colScale1 = d3.scale.linear().domain().range(COLS1); // for population
 var year;
 var sexSelector;
 var populationData;
@@ -158,7 +159,7 @@ function colorPop(sx, yr) {
         populationData.forEach(function(dat, ind) {
             if (dat.sex === sx) {
                 svg.selectAll('.reg' + dat.region)
-                    .attr('fill', colScale(dat[yr]));
+                    .attr('fill', colScale1(dat[yr]));
             }
         });
     }
@@ -200,10 +201,12 @@ var tl = {
     frameDuration:50,
     init: function() {
         tl.currentYear= 1968;
+        tl.previousFrameTime=0;
+        tl.elapsedTime=0;
     },
     clock: function(currentTime) {
         tl.elapsedTime = currentTime - tl.previousFrameTime;
-           // console.log(tl.elapsedTime);
+           console.log(tl.elapsedTime);
         if (tl.elapsedTime > tl.frameDuration) {
             tl.previousFrameTime = currentTime;
             tl.update();
@@ -221,10 +224,10 @@ var tl = {
     update: function() {
         if (tl.currentYear<2014){
             tl.currentYear++;
-            // console.log(tl.currentYear);
+            console.log(tl.currentYear);
             colorPop(sexSelector,tl.currentYear);
         }else{
-            tl.start();
+            tl.init();
         }
     }
 };
