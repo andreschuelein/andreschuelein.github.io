@@ -17,9 +17,9 @@ const COL1 = "#B4B4B4";
 // const COLS = ['#2b83ba', '#abdda4', '#ffffbf', '#fdae61', '#d7191c']; // thanks to http://colorbrewer2.org/
 // var colScale1 = d3.scale.linear().domain([0, 10000, 20000, 30000, 40000]).range(COLS);
 
-const COLS1 = ['#ffffb2','#fed976','#feb24c','#fd8d3c','#fc4e2a','#e31a1c','#b10026'];
-const DOMAIN1=[1000, 5000, 10000, 20000, 30000,40000,50000];
-var colScale1 = d3.scale.linear().domain().range(COLS1); // for population
+const COLS1 = ['#ffffb2', '#fed976', '#feb24c', '#fd8d3c', '#fc4e2a', '#e31a1c', '#b10026'];
+const DOMAIN1 = [1000, 5000, 10000, 20000, 30000, 40000, 50000];
+var colScale1 = d3.scale.linear().domain(DOMAIN1).range(COLS1); // for population
 var year;
 var sexSelector;
 var populationData;
@@ -138,7 +138,7 @@ function loadPopulationData(_callback) {
 
 
 function queryPop(reg, sx, yr) {
-    var found = null;
+ var found = null;
     if (populationData !== null) {
         populationData.some(function(dat, ind) {
             if (dat.region === reg && dat.sex === sx) {
@@ -166,16 +166,41 @@ function colorPop(sx, yr) {
 }
 
 
-function showLoadingSplash(_callback) {
-    svg.append("circle")
-        .attr('id', 'loading')
-        .attr("cx", 100)
-        .attr("cy", 100)
-        .attr("r", 50)
-        .attr("fill", "red");
-    _callback(null);
-}
-
+var dataQueries = {
+    getPop: function(_year, _sex, _region) {
+        var pop = 0;
+        if (_region) {
+            // specific region, gender, year
+            var found = null;
+            if (populationData !== null) {
+                populationData.some(function(dat, ind) {
+                    if (dat.region === _region && dat.sex === _sex) {
+                        found = ind;
+                        return dat[_year];
+                    }
+                });
+                pop = found !== null ? parseInt(populationData[found][_year]) : 'data point unavailable';
+                return pop;
+            }
+        } else if (_sex) {
+            // specific gender and year, total for whole country
+            populationData.forEach(function(dat,ind){
+                if(dat.sex===_sex){
+                    pop+=parseInt(dat[_year]);
+                }
+            });
+            return pop;
+        } else {
+            // specific year, gender unspecific and whole country
+            populationData.forEach(function(dat,ind){
+                pop+=parseInt(dat[_year]);
+                return pop;
+            });
+        }
+        throw "wrong params";
+        // return pop;
+    }
+};
 
 
 function backgroundLoading() {
@@ -193,20 +218,64 @@ function backgroundLoading() {
     });
 }
 
+var sweMap = {
+    // draw:function(){},
+    // drawBorders
+};
+
+var hist = {
+    data:[],
+    // x: d3.scale.linear().domain().range(),
+    // y: d3.scale.linear().domain().range(),
+    init: function() {},
+    update: function() {}
+};
+
+var pc = {
+    // x: d3.scale.linear().domain().range(),
+    // y: d3.scale.linear().domain().range(),
+    init: function() {},
+    update: function() {}
+};
+
+var slider = {
+    data:[],
+    year:1968,
+    // x: d3.scale.linear().domain().range(),
+    // y: d3.scale.linear().domain().range(),
+    init: function() {
+        for(var i=1968;i<2015;i++){
+            var totalMen=dataQueries.getPop(i,"men",null);
+            var totalWomen=dataQueries.getPop(i,"women",null);
+            slider.data.push({year:i,total:totalMen+totalWomen,men:totalMen,women:totalWomen});
+        }
+    },
+    update: function() {
+        // svg;
+    },
+    getYear: function() { return slider.year;},
+    setYear: function(_year) { slider.year = _year;}
+};
+
+var info = {
+    init: function() {},
+    update: function() {}
+};
+
 var tl = {
     currentYear: 1968,
     playState: false, // play/pause toggle
     previousFrameTime: 0,
     elapsedTime: 0,
-    frameDuration:50,
+    frameDuration: 50,
     init: function() {
-        tl.currentYear= 1968;
-        tl.previousFrameTime=0;
-        tl.elapsedTime=0;
+        tl.currentYear = 1968;
+        tl.previousFrameTime = 0;
+        tl.elapsedTime = 0;
     },
     clock: function(currentTime) {
         tl.elapsedTime = currentTime - tl.previousFrameTime;
-           console.log(tl.elapsedTime);
+        // console.log(tl.elapsedTime);
         if (tl.elapsedTime > tl.frameDuration) {
             tl.previousFrameTime = currentTime;
             tl.update();
@@ -216,17 +285,17 @@ var tl = {
     start: function() {
         tl.init();
         tl.playState = true;
-        d3.timer(tl.clock);    
+        d3.timer(tl.clock);
     },
     stop: function() {
         tl.playState = false;
     },
     update: function() {
-        if (tl.currentYear<2014){
+        if (tl.currentYear < 2014) {
             tl.currentYear++;
-            console.log(tl.currentYear);
-            colorPop(sexSelector,tl.currentYear);
-        }else{
+            // console.log(tl.currentYear);
+            colorPop(sexSelector, tl.currentYear);
+        } else {
             tl.init();
         }
     }
