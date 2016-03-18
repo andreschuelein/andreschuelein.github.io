@@ -1,6 +1,5 @@
-
-.swe:hover {
-    /*fill: #244222;*/
+.hover {
+    fill: none;
     stroke: #222222;
     stroke-width: 2px;
 }
@@ -13,6 +12,12 @@
     fill: none;
     stroke: #3F3F3F;
     /*stroke-width: 0px;*/
+}
+
+.marked {
+    fill: none;
+    stroke: #3F3F3F;
+    stroke-width: 3px;
 }
 
 /*.subdistrict_boundary {
