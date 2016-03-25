@@ -113,14 +113,14 @@ function drawAxis() {
 
     yLabel = svg.append("text")
         .attr("transform", "rotate(-90)")
-        .attr("y", 0 - margin.left)
-        .attr("x", 0 - (height / 2))
+        // .attr("y", 0 - margin.left)
+        // .attr("x", 0 - (height / 2))
         .attr("dy", "1em")
         .style("text-anchor", "middle")
         .text("height of platform edge (in cm)");
 
-    xLabel = svg.append("text")
-        .attr("transform", "translate(" + (width / 2) + " ," + (height + margin.bottom * 0.75) + ")")
+    xLabel = slider.obj.append("text")
+        // .attr("transform", "translate(" + (slider.width / 2) + " ," + slider.height  + ")")
         .style("text-anchor", "middle")
         .text("net platform length (in m)");
 

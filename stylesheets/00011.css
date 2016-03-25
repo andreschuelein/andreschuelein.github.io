@@ -31,6 +31,28 @@ sup {
     font-size: 0.6em;
 }
 
+.axis text {
+    font-family: sans-serif;
+    font-size: 14px;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
+.sliderreticle {
+       fill: none;
+    stroke: #404040;
+    stroke-width: 1px;
+    /*stroke-linecap: round;*/
+    stroke-dasharray:1,2;
+    shape-rendering:crispEdges;
+}
+
+
 .tooltip {
     padding: 4px;
     position: absolute;

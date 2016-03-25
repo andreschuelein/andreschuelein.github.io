@@ -1,18 +1,9 @@
 // jshint esnext:true
-var q;
 var width = 1000,
     height = 900;
 var svg = d3.select("#sContainer").append("svg")
     .attr("width", width)
     .attr("height", height);
-var projection = d3.geo.albers()
-    .center([0, 55.4])
-    .rotate([4.4, 0])
-    .parallels([50, 60])
-    .scale(3500)
-    .translate([-100, 930]); //TODO fix this with getBoundingClientRect
-var path = d3.geo.path()
-    .projection(projection);
 const AUTOSTART = false;
 const COL1 = "#B4B4B4";
 // const COLS = ['#2b83ba', '#abdda4', '#ffffbf', '#fdae61', '#d7191c']; // thanks to http://colorbrewer2.org/
@@ -29,34 +20,6 @@ var sexSelector;
 var populationData, growthData;
 var map, swe;
 
-// var tooltip = {
-//     direction: 'right',
-//     obj: d3.select("#sContainer")
-//         .append('div')
-//         .attr('class', 'tooltip')
-//         .style('opacity', 0)
-//         .on('mouseover', (function(event) {
-//             d3.event.preventDefault();
-//         })),
-//     updatePos: function(_x, _y) {
-//         var r = tooltip.obj.node().getBoundingClientRect();
-//         var xOffset = tooltip.direction === 'right' ? 30 : -r.width;
-//         var yOffset = -r.height - 10;
-//         tooltip.obj
-//             .style('left', (_x + xOffset) + 'px')
-//             .style("top", (_y + yOffset) + "px");
-//     },
-//     updateLabel: function(_html_text) {
-//         tooltip.obj
-//             .html(_html_text);
-//     },
-//     show: function(_opacity) {
-//         tooltip.obj.transition().duration(150).style('opacity', _opacity ? _opacity : 1);
-//     },
-//     hide: function() {
-//         tooltip.obj.transition().style('opacity', 0);
-//     },
-// };
 
 // from https://stackoverflow.com/questions/14167863/how-can-i-bring-a-circle-to-the-front-with-d3/14426477#14426477
 d3.selection.prototype.moveToFront = function() {
@@ -66,87 +29,105 @@ d3.selection.prototype.moveToFront = function() {
 };
 
 
-function init(_callback) {
-    year = 2014;
-    sexSelector = 'men';
-    populationData = null;
-    _callback(null);
-}
-
-function loadGeoData(_callback) {
-    d3.json("../data/00011/swe.json", function(error, _map) {
-        if (error) {
-            return console.error(error);
-        } else {
-            map = _map;
-            sweMap.renderMap();
-            sweMap.drawBorders();
-        }
-    });
-    _callback(null);
-}
-
-
-function loadPopulationData(_callback) {
-    d3.csv('../data/00011/population.csv', function(err, res) {
-        if (err) {
-            throw (err);
-        } else {
-            populationData = res;
-            populationData.forEach(function(d) {
-                d.region = parseInt(d.region);
+var app = {
+    year: 2014,
+    mode: null,
+    main: function() {
+        app.init();
+    },
+    init: function() {
+        year = 2014;
+        sexSelector = 'men';
+        populationData = null;
+        var q = d3_queue.queue()
+            .defer(loader.geoData)
+            .defer(loader.populationData)
+            .defer(loader.growthData)
+            .await(function(error) {
+                if (error) {
+                    throw error;
+                } else {
+                    dataQueries.init();
+                    sweMap.init();
+                    hist.init();
+                    pc.init();
+                    slider.init();
+                    info.init();
+                    tl.init();
+                    sweMap.renderMap();
+                    sweMap.drawBorders();
+                    sweMap.colorGrowth(sexSelector, year);
+                    if (AUTOSTART) {
+                        tl.start();
+                    }
+                }
             });
-            if (_callback) {
-                _callback(null);
-            }
+    },
+    update: function(_year, _dataSet) {
+        if (!(_year === app.year && _dataSet === app.mode)) {
+            _year=_year<1969?1969:_year;
+            _year=_year>2014?2014:_year;
+            app.year=_year;
+            sweMap.update(_year, _dataSet);
+            hist.update(_year, _dataSet);
+            pc.update(_year, _dataSet);
+            slider.update(_year, _dataSet);
+            info.update(_year, _dataSet);
+            tl.update(_year, _dataSet);
         }
-    });
-}
+    }
+};
 
-function loadGrowthData(_callback) {
-    d3.csv('../data/00011/growth.csv', function(err, res) {
-        if (err) {
-            throw (err);
-        } else {
-            growthData = res;
-            growthData.forEach(function(d) {
-                d.region = parseInt(d.region);
-            });
-            if (_callback) {
-                _callback(null);
+
+
+var loader = {
+    geoData: function(_callback) {
+        d3.json("../data/00011/swe.json", function(error, _map) {
+            if (error) {
+                return console.error(error);
+            } else {
+                map = _map;
+                // sweMap.renderMap();
+                // sweMap.drawBorders();
             }
-        }
-    });
-}
-
-function colorPop(_sx, _yr) {
-    if (_sx === 'total') {
-        // add women and men
-    } else {
-        populationData.forEach(function(dat, ind) {
-            if (dat.sex === _sx) {
-                svg.selectAll('.reg' + dat.region)
-                    .attr('fill', colScale1(dat[_yr]));
+        });
+        _callback(null);
+    },
+    populationData: function(_callback) {
+        d3.csv('../data/00011/population.csv', function(err, res) {
+            if (err) {
+                throw (err);
+            } else {
+                populationData = res;
+                populationData.forEach(function(d) {
+                    d.region = parseInt(d.region);
+                });
+                if (_callback) {
+                    _callback(null);
+                }
+            }
+        });
+    },
+    growthData: function(_callback) {
+        d3.csv('../data/00011/growth.csv', function(err, res) {
+            if (err) {
+                throw (err);
+            } else {
+                growthData = res;
+                growthData.forEach(function(d) {
+                    d.region = parseInt(d.region);
+                });
+                if (_callback) {
+                    _callback(null);
+                }
             }
         });
     }
-}
-
-function colorGrowth(_sx, _yr) {
-    if (_sx === 'total') {
-        // add women and men
-    } else {
-        growthData.forEach(function(dat, ind) {
-            if (dat.sex === _sx) {
-                svg.selectAll('.reg' + dat.region)
-                    .attr('fill', colScale2(dat[_yr]));
-            }
-        });
-    }
-}
+};
 
 
 var dataQueries = {
+    init: function() {},
     getPop: function(_year, _sex, _region) {
         var pop = 0;
         if (_region) {
@@ -215,26 +196,21 @@ var dataQueries = {
     }
 };
 
-
-function backgroundLoading() {
-    q = d3_queue.queue()
-        .defer(loadGeoData)
-        .defer(loadPopulationData)
-        .defer(loadGrowthData)
-
-    .await(function(error) {
-        if (error) {
-            throw error;
-        } else {
-            colorGrowth(sexSelector, year);
-            if (AUTOSTART) {
-                tl.start();
-            }
-        }
-    });
-}
-
 var sweMap = {
+    init: function() {
+        sweMap.projection = d3.geo.albers()
+            .center([0, 55.4])
+            .rotate([4.4, 0])
+            .parallels([50, 60])
+            .scale(3300)
+            .translate([-420, 880]);
+        sweMap.path = d3.geo.path().projection(sweMap.projection);
+    },
+    update: function(_y,_d) {
+        sweMap.colorGrowth(sexSelector, _y);
+    },
+    projection: null, //TODO fix this with getBoundingClientRect
+    path: null,
     mode: "growth", // "population","growth",... tbd
     tileSelected: false,
     draw: function() {},
@@ -243,7 +219,7 @@ var sweMap = {
             .datum(topojson.mesh(map, map.objects.swe_epgs4326, function(a, b) {
                 return true;
             }))
-            .attr('d', path)
+            .attr('d', sweMap.path)
             .attr('class', 'boundary');
     },
     renderMap: function() {
@@ -255,7 +231,7 @@ var sweMap = {
             .attr("class", function(d) {
                 return "swe reg" + parseInt(d.id);
             })
-            .attr("d", path)
+            .attr("d", sweMap.path)
             .attr('fill', COL1);
 
         // attach mouse event handlers
@@ -290,7 +266,7 @@ var sweMap = {
                 }
 
             }))
-            .attr('d', path)
+            .attr('d', sweMap.path)
             .attr('class', 'marked');
     },
     drawBorderHover: function(_id) {
@@ -300,7 +276,7 @@ var sweMap = {
                     return true;
                 }
             }))
-            .attr('d', path)
+            .attr('d', sweMap.path)
             .attr('class', 'hover');
     },
     removeBorderMarked: function() {
@@ -311,8 +287,31 @@ var sweMap = {
     },
     centerMap: function() {
 
+    },
+    colorPop: function(_sx, _yr) {
+        if (_sx === 'total') {
+            // add women and men
+        } else {
+            populationData.forEach(function(dat, ind) {
+                if (dat.sex === _sx) {
+                    svg.selectAll('.reg' + dat.region)
+                        .attr('fill', colScale1(dat[_yr]));
+                }
+            });
+        }
+    },
+    colorGrowth: function(_sx, _yr) {
+        if (_sx === 'total') {
+            // add women and men
+        } else {
+            growthData.forEach(function(dat, ind) {
+                if (dat.sex === _sx) {
+                    svg.selectAll('.reg' + dat.region)
+                        .attr('fill', colScale2(dat[_yr]));
+                }
+            });
+        }
     }
-
 };
 
 var hist = {
@@ -331,16 +330,137 @@ var pc = {
 };
 
 var slider = {
+    obj: svg.append('g').attr('class', 'slider'),
+    anchor: [370, 650],
     data: [],
     year: 1968,
-    // x: d3.scale.linear().domain().range(),
-    // y: d3.scale.linear().domain().range(),
+    height: 200,
+    width: 600,
+    x: null,
+    y: null,
+    xAxis: null,
+    yAxis: null,
     init: function() {
+        slider.x = d3.scale.linear().domain([1968, 2014]).range([0, slider.width]).nice();
+        slider.y = d3.scale.linear().domain([100000, 0]).range([0, slider.height]).nice();
+        slider.obj.attr('transform', 'translate(' + slider.anchor[0] + ',' + slider.anchor[1] + ')');
         for (var i = 1968; i < 2015; i++) {
             var totalMen = dataQueries.getPop(i, "men", null);
             var totalWomen = dataQueries.getPop(i, "women", null);
             slider.data.push({ year: i, total: totalMen + totalWomen, men: totalMen, women: totalWomen });
         }
+        slider.drawAxis();
+        slider.obj.append('rect')
+            .attr('width', slider.width)
+            .attr('height', slider.height)
+            .style('opacity', 0)
+            // .style('fill','red')
+            .on('mouseenter', slider.eventHandler.enter)
+            .on('mouseleave', slider.eventHandler.leave)
+            .on('mousemove', slider.eventHandler.move)
+            .on('click', slider.eventHandler.click);
+    },
+    update: function() {},
+    eventHandler: {
+        mouseover: false,
+        enter: function(_e) {
+            slider.eventHandler.mouseover = true;
+            slider.reticle.show();
+        },
+        leave: function(_e) {
+            console.log('LEAVE');
+            slider.eventHandler.mouseover = false;
+            slider.reticle.hide();
+        },
+        move: function(_e) {
+            var _m = d3.mouse(this);
+            slider.reticle.update(_m);
+            // console.log(Math.round(slider.x.invert(_m[0])));
+            app.update(Math.round(slider.x.invert(_m[0])), null)
+        },
+        click: function(_e) {
+            // console.log('CLICK');
+            slider.setYear();
+        }
+    },
+    reticle: {
+        show: function() {
+            // vertical line
+            // console.log("LINE");
+            slider.obj.append('line')
+                .classed('sliderreticle', true)
+                .classed('vertical', true)
+                .attr('x1', 0)
+                .attr('y1', slider.height)
+                .attr('x2', 0)
+                .attr('y2', 0);
+            slider.obj.append('line')
+                .classed('sliderreticle', true)
+                .classed('horizontal', true)
+                .attr('x1', 0)
+                .attr('y1', 0)
+                .attr('x2', slider.width)
+                .attr('y2', 0);
+            slider.obj.select('rect').moveToFront();
+        },
+        hide: function() {
+            d3.selectAll('.sliderreticle').remove();
+        },
+        update: function(_pos) {
+            d3.selectAll('.slider').select('.vertical')
+                // .transition()
+                .attr('x1', _pos[0])
+                .attr('x2', _pos[0]);
+            d3.selectAll('.slider').select('.horizontal')
+                // .transition()
+                .attr('y1', _pos[1])
+                .attr('y2', _pos[1]);
+
+        }
+    },
+    markAnchor: function() {
+        svg.append('circle')
+            .attr('class', 'slideranchor')
+            .attr('cx', slider.anchor[0])
+            .attr('cy', slider.anchor[1])
+            .attr('r', 20)
+            .attr('fill', 'red');
+    },
+    drawAxis: function() {
+        slider.xAxis = d3.svg
+            .axis()
+            .scale(slider.x)
+            .orient("bottom")
+            .tickFormat(d3.format('4d'));
+
+        slider.yAxis = d3.svg
+            .axis()
+            .scale(slider.y)
+            .orient("left");
+
+
+        slider.obj.append("g")
+            .attr("class", "axis")
+            .attr('transform', 'translate(' + 0 + ',' + slider.height + ')')
+            .call(slider.xAxis);
+
+        slider.obj.append("g")
+            .attr("class", "axis")
+            .attr('transform', 'translate(' + 0 + ',' + 0 + ')')
+            .call(slider.yAxis);
+
+        yLabel = slider.obj.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("dx", -slider.height / 2)
+            .attr('dy', -60)
+            .style("text-anchor", "middle")
+            .text("population");
+
+        var yearFormat = d3.format('4d');
+        xLabel = slider.obj.append("text")
+            .attr("transform", "translate(" + (slider.width / 2) + " ," + (slider.height + 35) + ")")
+            .style("text-anchor", "middle")
+            .text("year");
     },
     update: function() {
         // svg;
@@ -388,7 +508,7 @@ var tl = {
         if (tl.currentYear < 2014) {
             tl.currentYear++;
             // console.log(tl.currentYear);
-            colorGrowth(sexSelector, tl.currentYear);
+            // sweMap.colorGrowth(sexSelector, tl.currentYear);
         } else {
             tl.init();
         }
@@ -396,10 +516,4 @@ var tl = {
 };
 
 
-function main() {
-
-    init(backgroundLoading);
-
-}
-
-main();
+app.main();
