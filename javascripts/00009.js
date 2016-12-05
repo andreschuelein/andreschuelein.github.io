@@ -119,8 +119,9 @@ function drawAxis() {
         .style("text-anchor", "middle")
         .text("height of platform edge (in cm)");
 
-    xLabel = slider.obj.append("text")
-        // .attr("transform", "translate(" + (slider.width / 2) + " ," + slider.height  + ")")
+    xLabel = // slider.obj.append("text")
+        svg.append("text")
+        .attr("transform", "translate(" + (width / 2) + " ," + (height + margin.bottom * 0.75) + ")")
         .style("text-anchor", "middle")
         .text("net platform length (in m)");
 

@@ -4,9 +4,18 @@
     stroke-width: 2px;
 }
 
-.swe {
-    /*fill: #5C755C;*/
+.datasource {
+    max-width: 800px;
+    margin: 70px auto 20px auto;
+    position: relative;
+    text-align: justify;
+    font-size: 15px;
 }
+
+
+/*.swe {
+    
+}*/
 
 .boundary {
     fill: none;
@@ -19,6 +28,7 @@
     stroke: #3F3F3F;
     stroke-width: 3px;
 }
+
 
 /*.subdistrict_boundary {
     fill: none;
@@ -44,14 +54,58 @@ sup {
 }
 
 .sliderreticle {
-       fill: none;
+    fill: none;
     stroke: #404040;
     stroke-width: 1px;
     /*stroke-linecap: round;*/
-    stroke-dasharray:1,2;
-    shape-rendering:crispEdges;
+    stroke-dasharray: 1, 2;
+    shape-rendering: crispEdges;
 }
 
+.sliderpath1 {
+    fill: none;
+    stroke: orangered;
+    stroke-width: 3px;
+    stroke-linecap: round;
+    /*stroke-dasharray: 1, 2;*/
+    /*shape-rendering: crispEdges;*/
+}
+
+.sliderpath2 {
+    fill: none;
+    stroke: deepskyblue;
+    stroke-width: 3px;
+    stroke-linecap: round;
+    /*stroke-dasharray: 1, 2;*/
+    /*shape-rendering: crispEdges;*/
+}
+
+.sliderpath3 {
+    fill: none;
+    stroke: gray;
+    stroke-width: 3px;
+    stroke-linecap: round;
+    /*stroke-dasharray: 1, 2;*/
+    /*shape-rendering: crispEdges;*/
+}
+
+.info text {
+    font-family: sans-serif;
+    font-size: 18px;
+}
+
+.infobox {
+    fill: none;
+    stroke: #020202;
+    stroke-width: 1px;
+    shape-rendering: crispEdges;
+}
+
+#infotopic {
+    font-family: sans-serif;
+    font-size: 30px;
+    font-weight: bold;
+}
 
 .tooltip {
     padding: 4px;
