@@ -21,8 +21,8 @@ var app = {
     // year: null,
     mode: null,
     modes: {
-        population: 'population',
-        growth: 'population growth'
+        population: 'Population',
+        growth: 'Population growth'
     },
     genders: {
         male: "men",
@@ -195,7 +195,7 @@ var dataSets = {
     regionNames: null,
     population: {
         data: null,
-        name: 'population',
+        name: 'Population  of Sweden',
         minYear: 1968,
         maxYear: 2014,
         minValue: null,
@@ -208,7 +208,7 @@ var dataSets = {
     },
     growth: {
         data: null,
-        name: 'population growth',
+        name: 'Population growth of Sweden',
         minYear: 1969,
         maxYear: 2014,
         minValue: null,
@@ -672,7 +672,7 @@ var slider = {
                 .attr('y1', slider.height)
                 .attr('x2', xPos)
                 .attr('y2', 0);
-            console.log('marker drawn at:' + xPos + ' year: ' + app.focus.year);
+            // console.log('marker drawn at:' + xPos + ' year: ' + app.focus.year);
 
         },
         hide: function() {},
@@ -779,7 +779,7 @@ var slider = {
 var info = {
     obj: svg.append('g').attr('class', 'info'),
     anchor: [550, 50],
-    height: 400,
+    height: 300,
     width: 350,
     init: function() {
         info.obj.attr('transform', 'translate(' + info.anchor[0] + ',' + info.anchor[1] + ')');
@@ -791,19 +791,33 @@ var info = {
         info.content.display();
     },
     update: function() {
-        // if (app.year != null)
-        // else
-        // this.content.setLine(0, '');
-        this.content.setLine(0, 'selected Year: ' + app.focus.year);
-        this.content.setLine(1, 'hover Year: ' + app.hover.year);
-        this.content.setLine(2, 'selected region: ' + dataSets.regionNames[app.focus.region]);
-        this.content.setLine(3, 'hover region: ' + dataSets.regionNames[app.hover.region]);
-        this.content.setLine(4, 'population total: ' + dataSets.regionNames[app.hover.region]);
-        this.content.setLine(5, 'population female: ' + dataSets.regionNames[app.hover.region]);
-        this.content.setLine(6, 'population male: ' + dataSets.regionNames[app.hover.region]);
-        this.content.setLine(7, 'population growth total: ' + dataSets.regionNames[app.hover.region]);
-        this.content.setLine(8, 'population growth female: ' + dataSets.regionNames[app.hover.region]);
-        this.content.setLine(9, 'population growth male: ' + dataSets.regionNames[app.hover.region]);
+        // var base = dataSets.getActive();
+        this.content.setTopic(dataSets.getActive().name);
+        this.content.setLine(0, 'year: ' + app.focus.year);
+        // var populationSet = null;
+        // var growthSet = null;
+        // if (!app.focus.region && !app.hover.region) {
+        //     // swe
+        //     populationSet = dataSets.population;
+        //     growthSet = dataSets.growth;
+        // } else {
+        //     // region
+        //     var regId = 
+        //     populationSet = dataSets.fetchRegionData
+        // }
+
+        this.content.setLine(1, 'population total: ' + this.format(dataSets.query(dataSets.population, app.focus.year, app.genders.total)));
+        this.content.setLine(2, 'population female: ' + this.format(dataSets.query(dataSets.population, app.focus.year, app.genders.female)));
+        this.content.setLine(3, 'population male: ' + this.format(dataSets.query(dataSets.population, app.focus.year, app.genders.male)));
+        this.content.setLine(4, 'population growth total: ' + this.format(dataSets.query(dataSets.growth, app.focus.year, app.genders.total)));
+        this.content.setLine(5, 'population growth female: ' + this.format(dataSets.query(dataSets.growth, app.focus.year, app.genders.female)));
+        this.content.setLine(6, 'population growth male: ' + this.format(dataSets.query(dataSets.growth, app.focus.year, app.genders.male)));
+    },
+    format: function(n) {
+        if (n >= 10000) {
+            return d3.format(".3s")(n)
+        }
+        return n;
     },
     events: {
         // hover: dispatch.on('hover.info', function(_event) {
@@ -815,7 +829,7 @@ var info = {
         offsetToTopic: 30,
         offset: 30,
         linePadding: 10,
-        numOfLines: 12,
+        numOfLines: 7,
         init: function() {
             info.obj
                 .append('text')
@@ -838,7 +852,7 @@ var info = {
                 .text('infoline' + lineNumber);
         },
         display: function() {
-            this.setTopic(dataSets.getActive().name + ' of Sweden');
+            this.setTopic(dataSets.getActive().name);
 
         },
         setTopic: function(topicText) {
@@ -863,6 +877,7 @@ var tl = {
     init: function() {
         tl.previousFrameTime = 0;
         tl.elapsedTime = 0;
+        tl.button.show();
     },
     clock: function(currentTime) {
         tl.elapsedTime = currentTime - tl.previousFrameTime;
@@ -881,7 +896,51 @@ var tl = {
     stop: function() {
         tl.playState = false;
     },
-    update: function() {}
+    update: function() {
+        this.button.update();
+    },
+    button: {
+        anchor: [200, -200],
+        height: 100,
+        width: 100,
+        id: 'playpausebutton',
+        text: 'PLAY/PAUSE',
+        spawnContainer: function() {
+
+            d3.select("#sContainer")
+                .append('div')
+                .attr('class', 'controls')
+                .attr('x', 500)
+                .attr('top', -200)
+                .style('width', 111 + 'px')
+                .style('height', 111 + 'px')
+        },
+        show: function() {
+            // this.spawnContainer();
+            // d3.select(".controls")
+            //     .append('div')
+            // d3.select("#sContainer")
+            svg
+                .append('button')
+                .attr('id', 'pbutton')
+                // .attr('body', 'press me')
+                .attr('left', 10)
+                .attr('top', -150)
+                .attr("float", "right")
+                .style('height', 50 + 'px')
+                .style('width', 150 + 'px')
+                .on('click', this.onClickHandler);
+            console.log('button created');
+
+        },
+        update: function() {},
+        hide: function() {},
+        onClickHandler: function(e) {
+            console.log('button clicked');
+
+        }
+    }
+
 };
 
 
