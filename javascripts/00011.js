@@ -18,11 +18,11 @@ d3.selection.prototype.moveToFront = function() {
 
 
 var app = {
-    year: null,
+    // year: null,
     mode: null,
     modes: {
-        population: 0,
-        growth: 1
+        population: 'population',
+        growth: 'population growth'
     },
     genders: {
         male: "men",
@@ -36,7 +36,8 @@ var app = {
     init: function() {
         app.mode = app.modes.growth;
         // app.mode = app.modes.population;
-        app.year = 2000;
+        // app.year = 2000;
+        app.focus.year = 2000;
         // console.log('app.year:' + app.year);
 
         genderFlag = 'men';
@@ -59,7 +60,7 @@ var app = {
                     tl.init();
                     sweMap.renderMap();
                     sweMap.drawBorders();
-                    sweMap.drawColor(genderFlag, app.year);
+                    sweMap.drawColor(genderFlag, app.focus.year);
                     if (AUTOSTART) {
                         tl.start();
                     }
@@ -102,20 +103,23 @@ var app = {
         this.update();
 
     },
-    update: function(_year, _dataSet) {
-        _year = _year == null ? app.year : _year;
-        if (!(_year === app.year && _dataSet === app.mode)) {
-            _year = _year < 1969 ? 1969 : _year;
-            _year = _year > 2014 ? 2014 : _year;
-            app.year = _year;
-            sweMap.update(_year, _dataSet);
-            hist.update(_year, _dataSet);
-            pc.update(_year, _dataSet);
-            slider.update(_year, _dataSet);
-            info.update(_year, _dataSet);
-            tl.update(_year, _dataSet);
-        }
-    }
+    // update: function(_year, _dataSet) {
+    update: function() {
+        //  var _year = _year == null ? app.year : _year;
+        // if (!(_year === app.year && _dataSet === app.mode)) {
+        //     _year = _year < 1969 ? 1969 : _year;
+        //     _year = _year > 2014 ? 2014 : _year;
+        app.year = dataSets.confineYear(app.year);
+        dataSets.update();
+        sweMap.update();
+        hist.update();
+        pc.update();
+        slider.update();
+        info.update();
+        tl.update();
+
+    },
+
 };
 
 dispatch.on('hover', function() {
@@ -215,11 +219,50 @@ var dataSets = {
             scale: null
         }
     },
+    region: {
+        data: null,
+        name: null,
+        minYear: null,
+        maxYear: null,
+        minValue: null,
+        maxValue: null,
+        colorScale: {
+            COLS: null,
+            DOMAIN: null,
+            scale: null
+        }
+    },
+    updateRegionObj: function() {
+        var regionId = '';
+        if (app.focus.region)
+            regionId = app.focus.region;
+        else
+            regionId = app.hover.region;
+        var obj = this.region;
+        var regionName = dataSets.regionNames[regionId];
+        obj.name = app.mode + ' of ' + regionName;
+        var base = app.mode == app.modes.population ? this.population : this.growth;
+        obj.minYear = base.minYear;
+        obj.maxYear = base.maxYear;
+        obj.colorScale = base.colorScale;
+        this.fetchRegionData(base, regionId);
+        this.setValueRange(this.region);
+    },
+    fetchRegionData: function(base, id) {
+        dataSets.region.data = [];
+        base.data.forEach(function(d, i) {
+            if (d.region === id)
+                dataSets.region.data.push(d);
+        });
+    },
     init: function() {
         this.population.colorScale.scale = d3.scale.linear().domain(dataSets.population.colorScale.DOMAIN).range(dataSets.population.colorScale.COLS);
         this.growth.colorScale.scale = d3.scale.linear().domain(dataSets.growth.colorScale.DOMAIN).range(dataSets.growth.colorScale.COLS);
         this.setValueRange(this.population);
         this.setValueRange(this.growth);
+    },
+    update: function() {
+        this.updateRegionObj();
     },
     setValueRange: function(dataset) {
         var min = null;
@@ -257,9 +300,24 @@ var dataSets = {
 
     },
 
-    getActive: function(mode) {
-        mode = mode == null ? app.mode : mode;
-        switch (mode) {
+    getActive: function() {
+        if (!app.focus.region && !app.hover.region) {
+            switch (app.mode) {
+                case app.modes.population:
+                    return dataSets.population;
+                case app.modes.growth:
+                    return dataSets.growth;
+                default:
+                    console.log('INVALID MODE');
+                    return null;
+            }
+        } else {
+            return this.region;
+        }
+    },
+    getActiveMap: function() {
+
+        switch (app.mode) {
             case app.modes.population:
                 return dataSets.population;
             case app.modes.growth:
@@ -268,6 +326,7 @@ var dataSets = {
                 console.log('INVALID MODE');
                 return null;
         }
+
     },
     queryValue: function(set, year, gender, region) {
         var pop = 0;
@@ -294,6 +353,12 @@ var dataSets = {
         }
         return result;
     },
+    query: function(set, year, gender) {
+        if (!app.focus.region && !app.hover.region)
+            return this.queryCountry(set, year, gender)
+        else
+            return this.queryRegion(set, year, gender, !app.focus.region ? app.hover.region : app.focus.region);
+    },
     queryRegion: function(set, year, gender, region) {
         var result = 0;
         if (gender === app.genders.total) {
@@ -310,6 +375,11 @@ var dataSets = {
             });
         }
         return result;
+    },
+    confineYear: function(year) {
+        year = year < this.getActive().minYear ? this.getActive().minYear : year;
+        year = year > this.getActive().maxYear ? this.getActive().maxYear : year;
+        return year;
     }
 };
 
@@ -327,8 +397,9 @@ var sweMap = {
             .translate([-420, 880]);
         sweMap.path = d3.geo.path().projection(sweMap.projection);
     },
-    update: function(_y, _d) {
-        sweMap.drawColor(genderFlag, _y);
+    update: function() {
+
+        sweMap.drawColor(genderFlag, app.focus.year);
     },
     draw: function() {},
     drawBorders: function() {
@@ -361,21 +432,26 @@ var sweMap = {
                     // app.focus.region = null;
                     sweMap.tileSelected = false;
                     sweMap.removeBorderMarked();
-                    dispatch.focus({ region: null, gender: app.focus.gender, year: app.focus.year });
+                    // dispatch.focus({ region: null, gender: app.focus.gender, year: app.focus.year });
+                    app.focus.region = null;
+                    dispatch.focus();
                 } else {
                     // focus
                     // app.focus.region = parseInt(_event.id);
                     sweMap.tileSelected = selReg;
                     sweMap.removeBorderMarked();
                     sweMap.drawBorderMarked(selReg);
-                    dispatch.focus({ region: parseInt(_event.id), gender: app.focus.gender, year: app.focus.year });
+                    // dispatch.focus({ region: parseInt(_event.id), gender: app.focus.gender, year: app.focus.year });
+                    app.focus.region = parseInt(_event.id);
+                    dispatch.focus();
                 }
             })
             .on('mouseenter', function(_event) {
                 if (parseInt(_event.id) !== sweMap.tileSelected) {
                     // app.hover = { region: parseInt(_event.id), gender: null, year: null };
-                    // sweMap.drawBorderHover(parseInt(_event.id));
                     // console.log('app.year before: ' + app.year);
+                    // 
+                    sweMap.drawBorderHover(parseInt(_event.id)); //change this to execute later in the event chain?
                     app.setHover(null, null, parseInt(_event.id));
                     dispatch.hover(); //ISSUE HERE
                     // console.log('app.year after: ' + app.year);
@@ -384,7 +460,9 @@ var sweMap = {
             .on('mouseleave', function(_event) {
                 // app.hover = { region: null, gender: null, year: null };
                 sweMap.removeBorderHover();
-                dispatch.unhover({ region: null, gender: null, year: null });
+                // dispatch.unhover({ region: null, gender: null, year: null });
+                app.hover.region = null;
+                dispatch.unhover();
             });
     },
     drawBorderMarked: function(_id) {
@@ -437,10 +515,11 @@ var sweMap = {
         if (_sx === 'total') {
             // add women and men
         } else {
-            dataSets.getActive().data.forEach(function(dat, ind) {
+            dataSets.getActiveMap().data.forEach(function(dat, ind) {
                 if (dat.sex === _sx) {
                     svg.selectAll('.reg' + dat.region)
-                        .attr('fill', dataSets.getActive().colorScale.scale(dat[_yr]));
+                        .transition()
+                        .attr('fill', dataSets.getActiveMap().colorScale.scale(dat[_yr]));
                 }
             });
         }
@@ -464,7 +543,7 @@ var pc = {
 
 var slider = {
     obj: svg.append('g').attr('class', 'slider'),
-    anchor: [370, 650],
+    anchor: [370, 610],
     data: {
         male: [],
         female: [],
@@ -479,34 +558,51 @@ var slider = {
     yAxis: null,
     title: '',
     init: function() { // TODO
-        var slider_domain = [dataSets.getActive().minYear, dataSets.getActive().maxYear];
-        var slider_values = [dataSets.getActive().maxValue, dataSets.getActive().minValue];
-        slider.x = d3.scale.linear().domain(slider_domain).range([0, slider.width]).nice();
-        slider.y = d3.scale.linear().domain(slider_values).range([0, slider.height]).nice();
+        this.setScales();
         slider.obj.attr('transform', 'translate(' + slider.anchor[0] + ',' + slider.anchor[1] + ')');
-        slider.fetchData(dataSets.getActive());
         slider.drawAxis(dataSets.getActive());
         slider.obj.append('rect')
             .attr('width', slider.width)
             .attr('height', slider.height)
             .style('opacity', 0)
-            // .style('fill','red')
             .on('mouseenter', slider.eventHandler.enter)
             .on('mouseleave', slider.eventHandler.leave)
             .on('mousemove', slider.eventHandler.move)
             .on('click', slider.eventHandler.click);
-        slider.line.show(slider.data.total, "sliderpath3");
+        slider.fetchData(dataSets.getActive());
         slider.line.show(slider.data.male, "sliderpath1");
         slider.line.show(slider.data.female, "sliderpath2");
+        slider.line.show(slider.data.total, "sliderpath3");
+        this.timeMarker.show();
+    },
+    setScales: function() {
+        var slider_domain = [dataSets.getActive().minYear, dataSets.getActive().maxYear];
+        var slider_values = [dataSets.getActive().maxValue, dataSets.getActive().minValue];
+        slider.x = d3.scale.linear().domain(slider_domain).range([0, slider.width]).nice();
+        slider.y = d3.scale.linear().domain(slider_values).range([0, slider.height]).nice();
     },
     fetchData: function(set) {
+        slider.data.female = [];
+        slider.data.male = [];
+        slider.data.total = [];
         for (i = set.minYear; i <= set.maxYear; i++) {
-            slider.data.male.push({ year: i, value: dataSets.queryCountry(set, i, app.genders.male) });
-            slider.data.female.push({ year: i, value: dataSets.queryCountry(set, i, app.genders.female) });
-            slider.data.total.push({ year: i, value: dataSets.queryCountry(set, i, app.genders.total) });
+            slider.data.male.push({ year: i, value: dataSets.query(set, i, app.genders.male) });
+            slider.data.female.push({ year: i, value: dataSets.query(set, i, app.genders.female) });
+            slider.data.total.push({ year: i, value: dataSets.query(set, i, app.genders.total) });
         }
     },
-    update: function() {},
+    update: function() {
+        this.updateScales();
+        this.updateAxis();
+        this.timeMarker.update();
+        slider.fetchData(dataSets.getActive());
+        slider.line.update(slider.data.male, "sliderpath1");
+        slider.line.update(slider.data.female, "sliderpath2");
+        slider.line.update(slider.data.total, "sliderpath3");
+    },
+    updateScales: function() {
+        this.setScales();
+    },
     eventHandler: {
         mouseover: false,
         enter: function(_e) {
@@ -514,22 +610,23 @@ var slider = {
             slider.reticle.show();
         },
         leave: function(_e) {
-            // console.log('LEAVE');
             slider.eventHandler.mouseover = false;
             slider.reticle.hide();
+            app.hover.year = null;
         },
         move: function(_e) {
             var _m = d3.mouse(this);
             slider.reticle.update(_m);
-            // console.log(Math.round(slider.x.invert(_m[0])));
-            app.update(Math.round(slider.x.invert(_m[0])), null);
+            app.hover.year = dataSets.confineYear(Math.round(slider.x.invert(_m[0])));
         },
         click: function(_e) {
             var _m = d3.mouse(this);
             // console.log(_m);
             // console.log('CLICK year: ' + Math.round(slider.x.invert(_m[0])));
             // slider.setYear();
-            app.setFocus(null, Math.round(slider.x.invert(_m[0])), null);
+            // app.setFocus(null, dataSets.confineYear(Math.round(slider.x.invert(_m[0]))), null);
+            app.focus.year = dataSets.confineYear(Math.round(slider.x.invert(_m[0])));
+            dispatch.focus();
         }
     },
     reticle: {
@@ -566,6 +663,27 @@ var slider = {
                 .attr('y2', _pos[1]);
         }
     },
+    timeMarker: {
+        show: function() {
+            var xPos = slider.x(app.focus.year);
+            slider.obj.append('line')
+                .attr('class', 'slidertimemarker')
+                .attr('x1', xPos)
+                .attr('y1', slider.height)
+                .attr('x2', xPos)
+                .attr('y2', 0);
+            console.log('marker drawn at:' + xPos + ' year: ' + app.focus.year);
+
+        },
+        hide: function() {},
+        update: function() {
+            var xPos = slider.x(app.focus.year);
+            d3.selectAll('.slidertimemarker')
+                .transition()
+                .attr('x1', xPos)
+                .attr('x2', xPos);
+        }
+    },
     markAnchor: function() {
         svg.append('circle')
             .attr('class', 'slideranchor')
@@ -589,16 +707,19 @@ var slider = {
             .tickFormat(d3.format(".2s"));
 
         slider.obj.append("g")
-            .attr("class", "axis")
+            // .attr("class", "axis")
+            .attr("class", "xAxis")
             .attr('transform', 'translate(' + 0 + ',' + slider.height + ')')
             .call(slider.xAxis);
 
         slider.obj.append("g")
-            .attr("class", "axis")
+            // .attr("class", "axis")
+            .attr("class", "yAxis")
             .attr('transform', 'translate(' + 0 + ',' + 0 + ')')
             .call(slider.yAxis);
 
         yLabel = slider.obj.append("text")
+            .attr('class', 'yAxisLabel')
             .attr("transform", "rotate(-90)")
             .attr("dx", -slider.height / 2)
             .attr('dy', -50)
@@ -610,6 +731,31 @@ var slider = {
             .style("text-anchor", "middle")
             .text("year");
     },
+    updateAxis: function() {
+        slider.xAxis = d3.svg
+            .axis()
+            .scale(slider.x)
+            .orient("bottom")
+            .tickFormat(d3.format('4d'));
+
+        slider.yAxis = d3.svg
+            .axis()
+            .scale(slider.y)
+            .orient("left")
+            .ticks(6)
+            .tickFormat(d3.format(".2s"));
+
+        d3.select('.xAxis')
+            .transition()
+            .call(slider.xAxis);
+
+        d3.select('.yAxis')
+            .transition()
+            .call(slider.yAxis);
+
+        d3.select('.yAxisLabel')
+            .text(dataSets.getActive().name);
+    },
     line: {
         line_utl: d3.svg.line()
             .x(function(d) { return slider.x(d.year); })
@@ -620,18 +766,21 @@ var slider = {
             slider.obj.append('path')
                 .attr('class', class_name)
                 .attr('d', slider.line.line_utl(l));
-            // ;
         },
         hide: function(name) {},
-        update: function(name) {}
+        update: function(l, name) {
+            d3.select('.' + name)
+                .transition()
+                .attr('d', slider.line.line_utl(l));
+        }
     }
 };
 
 var info = {
     obj: svg.append('g').attr('class', 'info'),
-    anchor: [600, 50],
-    height: 200,
-    width: 300,
+    anchor: [550, 50],
+    height: 400,
+    width: 350,
     init: function() {
         info.obj.attr('transform', 'translate(' + info.anchor[0] + ',' + info.anchor[1] + ')');
         info.obj.append('rect')
@@ -642,13 +791,19 @@ var info = {
         info.content.display();
     },
     update: function() {
-        if (app.year != null)
-            this.content.setLine(0, 'Year: ' + app.hover.year);
-        else
-            this.content.setLine(0, '');
-        this.content.setLine(1, 'selected region: ' + dataSets.regionNames[app.focus.region]);
-        this.content.setLine(2, 'hover region: ' + dataSets.regionNames[app.hover.region]);
-        this.content.setLine(3, 'selected Year: ' + app.focus.year);
+        // if (app.year != null)
+        // else
+        // this.content.setLine(0, '');
+        this.content.setLine(0, 'selected Year: ' + app.focus.year);
+        this.content.setLine(1, 'hover Year: ' + app.hover.year);
+        this.content.setLine(2, 'selected region: ' + dataSets.regionNames[app.focus.region]);
+        this.content.setLine(3, 'hover region: ' + dataSets.regionNames[app.hover.region]);
+        this.content.setLine(4, 'population total: ' + dataSets.regionNames[app.hover.region]);
+        this.content.setLine(5, 'population female: ' + dataSets.regionNames[app.hover.region]);
+        this.content.setLine(6, 'population male: ' + dataSets.regionNames[app.hover.region]);
+        this.content.setLine(7, 'population growth total: ' + dataSets.regionNames[app.hover.region]);
+        this.content.setLine(8, 'population growth female: ' + dataSets.regionNames[app.hover.region]);
+        this.content.setLine(9, 'population growth male: ' + dataSets.regionNames[app.hover.region]);
     },
     events: {
         // hover: dispatch.on('hover.info', function(_event) {
@@ -660,7 +815,7 @@ var info = {
         offsetToTopic: 30,
         offset: 30,
         linePadding: 10,
-        numOfLines: 6,
+        numOfLines: 12,
         init: function() {
             info.obj
                 .append('text')
@@ -683,7 +838,7 @@ var info = {
                 .text('infoline' + lineNumber);
         },
         display: function() {
-            this.setTopic('Sweden');
+            this.setTopic(dataSets.getActive().name + ' of Sweden');
 
         },
         setTopic: function(topicText) {
@@ -701,25 +856,20 @@ var info = {
 };
 
 var tl = {
-    currentYear: 1968,
     playState: false, // play/pause toggle
     previousFrameTime: 0,
     elapsedTime: 0,
-    frameDuration: 200,
+    frameDuration: 250,
     init: function() {
-        // console.log('tl.init called');
-        tl.currentYear = 1969;
         tl.previousFrameTime = 0;
         tl.elapsedTime = 0;
     },
     clock: function(currentTime) {
         tl.elapsedTime = currentTime - tl.previousFrameTime;
-        // console.log(tl.elapsedTime);
         if (tl.elapsedTime > tl.frameDuration) {
             tl.previousFrameTime = currentTime;
-            tl.currentYear++;
-            tl.currentYear = tl.currentYear < 2014 ? tl.currentYear : 1969;
-            dispatch.timer(tl.currentYear);
+            app.focus.year = app.focus.year + 1 > dataSets.getActive().maxYear ? dataSets.getActive().minYear : app.focus.year + 1;
+            dispatch.timer();
         }
         return (!tl.playState);
     },
@@ -731,9 +881,7 @@ var tl = {
     stop: function() {
         tl.playState = false;
     },
-    update: function() {
-        // console.log(tl.currentYear);
-    }
+    update: function() {}
 };
 
 

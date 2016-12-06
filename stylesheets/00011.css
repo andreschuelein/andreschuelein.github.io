@@ -53,6 +53,30 @@ sup {
     shape-rendering: crispEdges;
 }
 
+.xAxis text {
+    font-family: sans-serif;
+    font-size: 14px;
+}
+
+.xAxis path,
+.xAxis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
+.yAxis text {
+    font-family: sans-serif;
+    font-size: 14px;
+}
+
+.yAxis path,
+.yAxis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
 .sliderreticle {
     fill: none;
     stroke: #404040;
@@ -62,9 +86,18 @@ sup {
     shape-rendering: crispEdges;
 }
 
+.slidertimemarker {
+    fill: none;
+    stroke: #3F3F3F;
+    stroke-width: 2px;
+    /*stroke-linecap: round;*/
+    /*stroke-dasharray: 1, 2;*/
+    shape-rendering: crispEdges;
+}
+
 .sliderpath1 {
     fill: none;
-    stroke: orangered;
+    stroke: deepskyblue;
     stroke-width: 3px;
     stroke-linecap: round;
     /*stroke-dasharray: 1, 2;*/
@@ -73,7 +106,7 @@ sup {
 
 .sliderpath2 {
     fill: none;
-    stroke: deepskyblue;
+    stroke: orangered;
     stroke-width: 3px;
     stroke-linecap: round;
     /*stroke-dasharray: 1, 2;*/
@@ -103,7 +136,7 @@ sup {
 
 #infotopic {
     font-family: sans-serif;
-    font-size: 30px;
+    font-size: 20px;
     font-weight: bold;
 }
 
