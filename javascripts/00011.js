@@ -1,13 +1,13 @@
 // jshint esnext:true
 var width = 1000,
     height = 900;
-var svg = d3.select("#sContainer").append("svg")
+var container = d3.select("#sContainer");
+var svg = container.append("svg")
     .attr("width", width)
     .attr("height", height);
 const AUTOSTART = false;
 var genderFlag;
 var map, swe;
-var dispatch = d3.dispatch("hover", "unhover", "focus", "timer");
 
 // from https://stackoverflow.com/questions/14167863/how-can-i-bring-a-circle-to-the-front-with-d3/14426477#14426477
 d3.selection.prototype.moveToFront = function() {
@@ -18,11 +18,12 @@ d3.selection.prototype.moveToFront = function() {
 
 
 var app = {
-    // year: null,
     mode: null,
     modes: {
         population: 'Population',
-        growth: 'Population growth'
+        growth: 'Population growth',
+        population_sqkm: 'Population density',
+        growth_sqkm: 'Population density growth'
     },
     genders: {
         male: "men",
@@ -30,23 +31,20 @@ var app = {
         total: "total"
     },
     gender: 2,
+    unit: 'km²',
     main: function() {
         app.init();
     },
     init: function() {
         app.mode = app.modes.growth;
-        // app.mode = app.modes.population;
-        // app.year = 2000;
         app.focus.year = 2000;
-        // console.log('app.year:' + app.year);
-
-        genderFlag = 'men';
-        // dataSets.population.data = null;
+        genderFlag = app.genders.total;
         dataSets.regionNames = {};
         var q = d3_queue.queue()
             .defer(loader.geoData)
             .defer(loader.populationData)
             .defer(loader.growthData)
+            .defer(loader.areaData)
             .await(function(error) {
                 if (error) {
                     throw error;
@@ -56,14 +54,11 @@ var app = {
                     hist.init();
                     pc.init();
                     slider.init();
+                    legend.init()
                     info.init();
                     tl.init();
-                    sweMap.renderMap();
-                    sweMap.drawBorders();
-                    sweMap.drawColor(genderFlag, app.focus.year);
-                    if (AUTOSTART) {
-                        tl.start();
-                    }
+                    controls.init();
+                    ml.init();
                 }
             });
     },
@@ -88,27 +83,12 @@ var app = {
         app.hover.region = _region;
     },
     hoverUpdate: function() {
-        // this.hover.gender = e.gender = null ? this.hover.gender : e.gender;
-        // this.hover.year = e.year = null ? this.hover.year : e.year;
-        // this.hover.region = e.region = null ? this.hover.region : e.region;
-        // this.hover.gender = e.gender;
-        // this.hover.year = e.year;
-        // this.hover.region = e.region;
         this.update();
     },
     focusUpdate: function() {
-        // this.focus.gender = e.gender;
-        // this.focus.year = e.year;
-        // this.focus.region = e.region;
         this.update();
-
     },
-    // update: function(_year, _dataSet) {
     update: function() {
-        //  var _year = _year == null ? app.year : _year;
-        // if (!(_year === app.year && _dataSet === app.mode)) {
-        //     _year = _year < 1969 ? 1969 : _year;
-        //     _year = _year > 2014 ? 2014 : _year;
         app.year = dataSets.confineYear(app.year);
         dataSets.update();
         sweMap.update();
@@ -117,30 +97,31 @@ var app = {
         slider.update();
         info.update();
         tl.update();
-
+        controls.update();
+        ml.update();
     },
 
 };
 
-dispatch.on('hover', function() {
-    app.hoverUpdate();
-});
 
-dispatch.on('unhover', function() {
-    app.hoverUpdate();
-});
-
-dispatch.on('focus', function() {
-    app.focusUpdate();
-});
-
-dispatch.on('timer', function() {
-    console.log('timer event');
-
-    app.update();
-});
-
-
+var dispatcher = {
+    dispatch: d3.dispatch("hover", "unhover", "focus", "timer", "radio_change")
+        .on('hover', function() {
+            app.hoverUpdate();
+        })
+        .on('unhover', function() {
+            app.hoverUpdate();
+        })
+        .on('focus', function() {
+            app.focusUpdate();
+        })
+        .on('timer', function() {
+            app.update();
+        })
+        .on('radio_change', function() {
+            app.update();
+        })
+}
 
 
 var loader = {
@@ -150,8 +131,6 @@ var loader = {
                 return console.error(error);
             } else {
                 map = _map;
-                // sweMap.renderMap();
-                // sweMap.drawBorders();
             }
         });
         _callback(null);
@@ -165,7 +144,9 @@ var loader = {
                 dataSets.population.data.forEach(function(d) {
                     dataSets.regionNames[parseInt(d.region).toString()] = d.region.slice(5);
                     d.region = parseInt(d.region);
-
+                    for (y = dataSets.population.minYear; y <= dataSets.population.maxYear; y++) {
+                        d[y] = +d[y];
+                    }
                 });
                 if (_callback) {
                     _callback(null);
@@ -181,6 +162,24 @@ var loader = {
                 dataSets.growth.data = res;
                 dataSets.growth.data.forEach(function(d) {
                     d.region = parseInt(d.region);
+                    for (y = dataSets.growth.minYear; y <= dataSets.growth.maxYear; y++) {
+                        d[y] = +d[y];
+                    }
+                });
+                if (_callback) {
+                    _callback(null);
+                }
+            }
+        });
+    },
+    areaData: function(_callback) {
+        d3.csv('../data/00011/municipalities_area_2014.csv', function(err, res) {
+            if (err) {
+                throw (err);
+            } else {
+                dataSets.area = {};
+                res.forEach(function(d, i) {
+                    dataSets.area[parseInt(d.region)] = +d.area;
                 });
                 if (_callback) {
                     _callback(null);
@@ -193,13 +192,27 @@ var loader = {
 
 var dataSets = {
     regionNames: null,
+    area: null,
     population: {
         data: null,
-        name: 'Population  of Sweden',
+        name: 'Population of Sweden',
         minYear: 1968,
         maxYear: 2014,
         minValue: null,
         maxValue: null,
+        colorScale: {
+            COLS: ['#ffffb2', '#fed976', '#feb24c', '#fd8d3c', '#fc4e2a', '#e31a1c', '#b10026'],
+            DOMAIN: [1000, 5000, 10000, 20000, 30000, 40000, 50000],
+            scale: null
+        }
+    },
+    population_sqkm: {
+        base: null,
+        data: [],
+        name: 'Population density of Sweden',
+        affix: ' (per ' + app.unit + ')',
+        minYear: 1968,
+        maxYear: 2014,
         colorScale: {
             COLS: ['#ffffb2', '#fed976', '#feb24c', '#fd8d3c', '#fc4e2a', '#e31a1c', '#b10026'],
             DOMAIN: [1000, 5000, 10000, 20000, 30000, 40000, 50000],
@@ -211,6 +224,19 @@ var dataSets = {
         name: 'Population growth of Sweden',
         minYear: 1969,
         maxYear: 2014,
+        minValue: null,
+        maxValue: null,
+        colorScale: {
+            COLS: ['#d7191c', '#fdae61', '#ffffbf', '#abd9e9', '#2c7bb6'],
+            DOMAIN: [-300, -100, 0, 100, 1000],
+            scale: null
+        }
+    },
+    growth_sqkm: {
+        base: null,
+        data: [],
+        name: 'Population density growth of Sweden',
+        affix: ' (per ' + app.unit + ')',
         minValue: null,
         maxValue: null,
         colorScale: {
@@ -232,6 +258,20 @@ var dataSets = {
             scale: null
         }
     },
+    region_sqkm: {
+        base: null,
+        data: [],
+        name: null,
+        minYear: null,
+        maxYear: null,
+        minValue: null,
+        maxValue: null,
+        colorScale: {
+            COLS: null,
+            DOMAIN: null,
+            scale: null
+        }
+    },
     updateRegionObj: function() {
         var regionId = '';
         if (app.focus.region)
@@ -241,7 +281,21 @@ var dataSets = {
         var obj = this.region;
         var regionName = dataSets.regionNames[regionId];
         obj.name = app.mode + ' of ' + regionName;
-        var base = app.mode == app.modes.population ? this.population : this.growth;
+        var base = (function(m) {
+            switch (m) {
+                case app.modes.population:
+                    return dataSets.population;
+                case app.modes.growth:
+                    return dataSets.growth;
+                case app.modes.population_sqkm:
+                    return dataSets.population_sqkm;
+                case app.modes.growth_sqkm:
+                    return dataSets.growth_sqkm;
+                default:
+                    console.log('INVALID MODE');
+                    return null
+            }
+        })(app.mode);
         obj.minYear = base.minYear;
         obj.maxYear = base.maxYear;
         obj.colorScale = base.colorScale;
@@ -255,11 +309,59 @@ var dataSets = {
                 dataSets.region.data.push(d);
         });
     },
+    setRegionYears: function() {
+        switch (app.mode) {
+            case app.modes.population:
+                this.region.minYear = this.population.minYear;
+                this.region.maxYear = this.population.maxYear;
+                break;
+            case app.modes.growth:
+                this.region.minYear = this.growth.minYear;
+                this.region.maxYear = this.growth.maxYear;
+                break;
+            case app.modes.population_sqkm:
+                this.region.minYear = this.population_sqkm.minYear;
+                this.region.maxYear = this.population_sqkm.maxYear;
+                break;
+            case app.modes.growth_sqkm:
+                this.region.minYear = this.growth_sqkm.minYear;
+                this.region.maxYear = this.growth_sqkm.maxYear;
+                break;
+            default:
+                console.log('INVALID MODE');
+                break;
+        }
+    },
+    setBase: function() {
+        this.population_sqkm.base = this.population;
+        this.growth_sqkm.base = this.growth;
+    },
+    fill_per_sqkm: function(set) {
+        set.minYear = set.base.minYear;
+        set.maxYear = set.base.maxYear;
+
+        set.base.data.forEach(function(d, i) {
+            var newObj = {};
+            newObj.region = d.region;
+            newObj.sex = d.sex
+            for (y = set.minYear; y <= set.maxYear; y++) {
+                newObj[y] = d[y] / dataSets.area[d.region];
+            }
+            set.data.push(newObj);
+        });
+    },
     init: function() {
-        this.population.colorScale.scale = d3.scale.linear().domain(dataSets.population.colorScale.DOMAIN).range(dataSets.population.colorScale.COLS);
-        this.growth.colorScale.scale = d3.scale.linear().domain(dataSets.growth.colorScale.DOMAIN).range(dataSets.growth.colorScale.COLS);
+        this.setBase();
+        this.fill_per_sqkm(this.population_sqkm);
+        this.fill_per_sqkm(this.growth_sqkm);
+        this.setColorScale(this.population);
+        this.setColorScale(this.growth);
+        this.setColorScale(this.population_sqkm);
+        this.setColorScale(this.growth_sqkm);
         this.setValueRange(this.population);
         this.setValueRange(this.growth);
+        this.setValueRange(this.population_sqkm);
+        this.setValueRange(this.growth_sqkm);
     },
     update: function() {
         this.updateRegionObj();
@@ -267,18 +369,16 @@ var dataSets = {
     setValueRange: function(dataset) {
         var min = null;
         var max = null;
-        // console.log(dataset.data);
         for (i = dataset.minYear; i <= dataset.maxYear; i++) {
             var yearTotal = 0;
             var yearMale = 0;
             var yearFemale = 0;
             dataset.data.forEach(function(dat, ind) {
-                // console.log('year: ' + i + ' regions/gender: ' + ind + ' population: ' + dat[i]);
-                yearTotal += parseInt(dat[i]);
+                yearTotal += dat[i];
                 if (dat.sex === app.genders.male)
-                    yearMale += parseInt(dat[i]);
+                    yearMale += dat[i];
                 if (dat.sex === app.genders.female)
-                    yearFemale += parseInt(dat[i]);
+                    yearFemale += dat[i];
 
             });
             min = min === null ? yearTotal : min;
@@ -294,12 +394,28 @@ var dataSets = {
         }
         dataset.minValue = min;
         dataset.maxValue = max;
-
-        // console.log('min ' + dataset.name + ': ' + min);
-        // console.log('max ' + dataset.name + ': ' + max);
-
     },
-
+    setColorScale: function(set) {
+        var percentile_array = [];
+        set.data.forEach(function(d, i) {
+            for (var y = set.minYear; y <= set.maxYear; y++) {
+                if (d.sex === app.genders.male) {
+                    percentile_array.push(d[y] + set.data[i + 1][y]);
+                }
+            }
+        });
+        percentile_array.sort(function(a, b) {
+            return a - b;
+        });
+        set.percentiles = [];
+        for (p = 0; p <= 1; p = p + 0.1) {
+            set.percentiles.push(percentile_array[Math.floor(p * percentile_array.length)]);
+        }
+        //thanks to http://colorbrewer2.org/
+        var range = colorbrewer.Spectral[set.percentiles.length];
+        var domain = set.percentiles;
+        set.colorScale.scale = d3.scale.linear().domain(domain).range(range).interpolate(d3.interpolateHcl);
+    },
     getActive: function() {
         if (!app.focus.region && !app.hover.region) {
             switch (app.mode) {
@@ -307,26 +423,33 @@ var dataSets = {
                     return dataSets.population;
                 case app.modes.growth:
                     return dataSets.growth;
+                case app.modes.population_sqkm:
+                    return dataSets.population_sqkm;
+                case app.modes.growth_sqkm:
+                    return dataSets.growth_sqkm;
                 default:
                     console.log('INVALID MODE');
                     return null;
             }
         } else {
+            this.setRegionYears();
             return this.region;
         }
     },
     getActiveMap: function() {
-
         switch (app.mode) {
             case app.modes.population:
                 return dataSets.population;
             case app.modes.growth:
                 return dataSets.growth;
+            case app.modes.population_sqkm:
+                return dataSets.population_sqkm;
+            case app.modes.growth_sqkm:
+                return dataSets.growth_sqkm;
             default:
                 console.log('INVALID MODE');
                 return null;
         }
-
     },
     queryValue: function(set, year, gender, region) {
         var pop = 0;
@@ -342,13 +465,13 @@ var dataSets = {
         if (gender === app.genders.total) {
             // male and female
             set.data.forEach(function(d, i) {
-                result += parseInt(d[year]);
+                result += d[year];
             });
         } else {
             // specific gender
             set.data.forEach(function(d, i) {
                 if (d.sex === gender)
-                    result += parseInt(d[year]);
+                    result += d[year];
             });
         }
         return result;
@@ -365,13 +488,13 @@ var dataSets = {
             // male and female
             set.data.forEach(function(d, i) {
                 if (d.region === region)
-                    result += parseInt(d[year]);
+                    result += d[year];
             });
         } else {
             // specific gender
             set.data.forEach(function(d, i) {
                 if (d.sex === gender && d.region === region)
-                    result += parseInt(d[year]);
+                    result += d[year];
             });
         }
         return result;
@@ -386,7 +509,6 @@ var dataSets = {
 var sweMap = {
     projection: null, //TODO fix this with getBoundingClientRect
     path: null,
-    // mode: "growth", // "population","growth",... tbd
     tileSelected: false,
     init: function() {
         sweMap.projection = d3.geo.albers()
@@ -396,6 +518,9 @@ var sweMap = {
             .scale(3300)
             .translate([-420, 880]);
         sweMap.path = d3.geo.path().projection(sweMap.projection);
+        sweMap.renderMap();
+        sweMap.drawBorders();
+        sweMap.drawColor(genderFlag, app.focus.year);
     },
     update: function() {
 
@@ -419,50 +544,34 @@ var sweMap = {
             .attr("class", function(d) {
                 return "swe reg" + parseInt(d.id);
             })
-            .attr("d", sweMap.path)
-            // .attr('fill', COL1)
-        ;
-
-        // attach mouse event handlers
+            .attr("d", sweMap.path);
         svg.selectAll('.swe')
             .on('click', function(_event) {
                 var selReg = parseInt(_event.id);
                 if (selReg === sweMap.tileSelected) {
-                    // unfocus
-                    // app.focus.region = null;
                     sweMap.tileSelected = false;
                     sweMap.removeBorderMarked();
-                    // dispatch.focus({ region: null, gender: app.focus.gender, year: app.focus.year });
                     app.focus.region = null;
-                    dispatch.focus();
+                    dispatcher.dispatch.focus();
                 } else {
-                    // focus
-                    // app.focus.region = parseInt(_event.id);
                     sweMap.tileSelected = selReg;
                     sweMap.removeBorderMarked();
                     sweMap.drawBorderMarked(selReg);
-                    // dispatch.focus({ region: parseInt(_event.id), gender: app.focus.gender, year: app.focus.year });
                     app.focus.region = parseInt(_event.id);
-                    dispatch.focus();
+                    dispatcher.dispatch.focus();
                 }
             })
             .on('mouseenter', function(_event) {
                 if (parseInt(_event.id) !== sweMap.tileSelected) {
-                    // app.hover = { region: parseInt(_event.id), gender: null, year: null };
-                    // console.log('app.year before: ' + app.year);
-                    // 
                     sweMap.drawBorderHover(parseInt(_event.id)); //change this to execute later in the event chain?
                     app.setHover(null, null, parseInt(_event.id));
-                    dispatch.hover(); //ISSUE HERE
-                    // console.log('app.year after: ' + app.year);
+                    dispatcher.dispatch.hover(); //ISSUE HERE
                 }
             })
             .on('mouseleave', function(_event) {
-                // app.hover = { region: null, gender: null, year: null };
                 sweMap.removeBorderHover();
-                // dispatch.unhover({ region: null, gender: null, year: null });
                 app.hover.region = null;
-                dispatch.unhover();
+                dispatcher.dispatch.unhover();
             });
     },
     drawBorderMarked: function(_id) {
@@ -495,25 +604,16 @@ var sweMap = {
     centerMap: function() {
 
     },
-    // colorPop: function(_sx, _yr) {
-    //     if (_sx === 'total') {
-    //         // add women and men
-    //     } else {
-    //         dataSets.population.data.forEach(function(dat, ind) {
-    //             if (dat.sex === _sx) {
-    //                 svg.selectAll('.reg' + dat.region)
-    //                     .attr('fill', dataSets.population.colorScale.scale(dat[_yr]));
-    //             }
-    //         });
-    //     }
-    // },
     drawColor: function(_sx, _yr) {
-        _yr = _yr == null ? app.year : _yr;
-        _yr = _yr == null ? 2000 : _yr;
-        // console.log('app year: ' + app.year);
-
-        if (_sx === 'total') {
-            // add women and men
+        if (_sx === app.genders.total) {
+            dataSets.getActiveMap().data.forEach(function(dat, ind) {
+                if (dat.sex === app.genders.male) {
+                    svg.selectAll('.reg' + dat.region)
+                        .transition()
+                        .attr('fill', dataSets.getActiveMap().colorScale.scale(dat[_yr] +
+                            dataSets.getActiveMap().data[ind + 1][_yr]));
+                }
+            });
         } else {
             dataSets.getActiveMap().data.forEach(function(dat, ind) {
                 if (dat.sex === _sx) {
@@ -528,17 +628,93 @@ var sweMap = {
 
 var hist = {
     data: [],
-    // x: d3.scale.linear().domain().range(),
-    // y: d3.scale.linear().domain().range(),
     init: function() {},
     update: function() {}
 };
 
 var pc = {
-    // x: d3.scale.linear().domain().range(),
-    // y: d3.scale.linear().domain().range(),
     init: function() {},
     update: function() {}
+};
+
+var ml = {
+    obj: null,
+    anchor: [270, 20],
+    height: 300,
+    width: 20,
+    lineheight: 30,
+    lineoffset: 0,
+    numOfLines: 8,
+    padding: 10,
+    label_offset: 65,
+    init: function() {
+        var scale = dataSets.getActiveMap().colorScale.scale();
+        var colorScale = d3.scale.linear()
+            .range(colorbrewer.Spectral[dataSets.getActiveMap().percentiles.length]).nice();
+        ml.obj = svg.append('g').attr('id', 'maplegend').attr('transform', 'translate(' + ml.anchor[0] + ',' + ml.anchor[1] + ')');
+        var defs = ml.obj.append('defs');
+        var gradient = defs.append('linearGradient')
+            .attr('id', 'gradient');
+        gradient
+            .attr("x1", "0%")
+            .attr("y1", "100%")
+            .attr("x2", "0%")
+            .attr("y2", "0%");
+        gradient.selectAll("stop")
+            .data(colorScale.range())
+            .enter().append("stop")
+            .attr("offset", function(d, i) { return i / (colorScale.range().length - 1); })
+            .attr("stop-color", function(d) { return d; });
+        ml.obj.append('rect')
+            .attr('class', 'maplegendbox')
+            .attr('height', ml.height)
+            .attr('width', ml.width)
+            .style("fill", "url(#gradient)");
+        var domain = dataSets.getActiveMap().percentiles;
+        var range = [];
+        var delta = ml.height / (dataSets.getActiveMap().percentiles.length - 1);
+        for (var i = 0; i < dataSets.getActiveMap().percentiles.length; i++) {
+            range.push(ml.height - i * delta);
+        }
+        var axis_scale = d3.scale.linear().domain(domain).range(range);
+        var color_axis = d3.svg
+            .axis()
+            .scale(axis_scale)
+            .orient("right")
+            .tickValues(domain)
+            .tickFormat(d3.format(".2s"));
+        ml.obj.append('g')
+            .attr("class", "color_axis")
+            .attr('transform', 'translate(' + (ml.width) + ',' + 0 + ')')
+            .call(color_axis);
+        var color_axis_label = ml.obj.append("text")
+            .attr('class', 'color_axis_label')
+            .attr("transform", "rotate(-90)")
+            .attr("dx", -ml.height / 2)
+            .attr('dy', +ml.width + ml.label_offset)
+            .style("text-anchor", "middle")
+            .text(dataSets.getActiveMap().name + (dataSets.getActiveMap().affix == null ? '' : dataSets.getActiveMap().affix));
+    },
+    update: function() {
+        var domain = dataSets.getActiveMap().percentiles;
+        var range = [];
+        var delta = ml.height / (dataSets.getActiveMap().percentiles.length - 1);
+        for (var i = 0; i < dataSets.getActiveMap().percentiles.length; i++) {
+            range.push(ml.height - i * delta);
+        }
+        var axis_scale = d3.scale.linear().domain(domain).range(range);
+        var color_axis = d3.svg
+            .axis()
+            .scale(axis_scale)
+            .orient("right")
+            .tickValues(domain)
+            .tickFormat(d3.format(".2s"));
+        d3.select('.color_axis')
+            .transition()
+            .call(color_axis);
+        d3.select('.color_axis_label')
+            .text(dataSets.getActiveMap().name + (dataSets.getActiveMap().affix == null ? '' : dataSets.getActiveMap().affix));
+    }
 };
 
 var slider = {
@@ -574,6 +750,7 @@ var slider = {
         slider.line.show(slider.data.female, "sliderpath2");
         slider.line.show(slider.data.total, "sliderpath3");
         this.timeMarker.show();
+        // this.legend.init();
     },
     setScales: function() {
         var slider_domain = [dataSets.getActive().minYear, dataSets.getActive().maxYear];
@@ -626,7 +803,7 @@ var slider = {
             // slider.setYear();
             // app.setFocus(null, dataSets.confineYear(Math.round(slider.x.invert(_m[0]))), null);
             app.focus.year = dataSets.confineYear(Math.round(slider.x.invert(_m[0])));
-            dispatch.focus();
+            dispatcher.dispatch.focus();
         }
     },
     reticle: {
@@ -672,8 +849,6 @@ var slider = {
                 .attr('y1', slider.height)
                 .attr('x2', xPos)
                 .attr('y2', 0);
-            // console.log('marker drawn at:' + xPos + ' year: ' + app.focus.year);
-
         },
         hide: function() {},
         update: function() {
@@ -707,13 +882,11 @@ var slider = {
             .tickFormat(d3.format(".2s"));
 
         slider.obj.append("g")
-            // .attr("class", "axis")
             .attr("class", "xAxis")
             .attr('transform', 'translate(' + 0 + ',' + slider.height + ')')
             .call(slider.xAxis);
 
         slider.obj.append("g")
-            // .attr("class", "axis")
             .attr("class", "yAxis")
             .attr('transform', 'translate(' + 0 + ',' + 0 + ')')
             .call(slider.yAxis);
@@ -724,7 +897,7 @@ var slider = {
             .attr("dx", -slider.height / 2)
             .attr('dy', -50)
             .style("text-anchor", "middle")
-            .text(set.name);
+            .text(set.name + (set.affix == null ? '' : set.affix));
 
         xLabel = slider.obj.append("text")
             .attr("transform", "translate(" + (slider.width / 2) + " ," + (slider.height + 40) + ")")
@@ -754,7 +927,7 @@ var slider = {
             .call(slider.yAxis);
 
         d3.select('.yAxisLabel')
-            .text(dataSets.getActive().name);
+            .text(dataSets.getActive().name + (dataSets.getActive().affix == null ? '' : dataSets.getActive().affix));
     },
     line: {
         line_utl: d3.svg.line()
@@ -774,14 +947,134 @@ var slider = {
                 .attr('d', slider.line.line_utl(l));
         }
     }
+
 };
 
+var legend = {
+    obj: null,
+    anchor: [10, 0],
+    offset: [5, 3],
+    boxheight: 15,
+    boxwidth: 15,
+    textoffset: -2,
+    init: function() {
+        this.anchor[0] += slider.anchor[0];
+        this.anchor[1] += slider.anchor[1];
+        this.obj = svg.append('g')
+            .attr('class', 'legend')
+            .attr('transform', 'translate(' + this.anchor[0] + ',' + this.anchor[1] + ')');
+        this.obj.append('rect')
+            .attr('id', 'legend_' + app.genders.total)
+            .attr('width', this.boxwidth)
+            .attr('height', this.boxheight)
+            .attr('x', 0)
+            .attr('y', 0);
+        this.obj.append('rect')
+            .attr('id', 'legend_' + app.genders.female)
+            .attr('width', this.boxwidth)
+            .attr('height', this.boxheight)
+            .attr('x', 0)
+            .attr('y', 1 * (this.offset[1] + this.boxheight));
+        this.obj.append('rect')
+            .attr('id', 'legend_' + app.genders.male)
+            .attr('width', this.boxwidth)
+            .attr('height', this.boxheight)
+            .attr('x', 0)
+            .attr('y', 2 * (this.offset[1] + this.boxheight));
+        this.obj.append('text')
+            .attr("transform", "translate(" + (this.boxwidth + this.offset[0]) + " ," + (1 * this.boxheight + this.textoffset) + ")")
+            .text(app.genders.total);
+        this.obj.append('text')
+            .attr("transform", "translate(" + (this.boxwidth + this.offset[0]) + " ," + (1 * this.offset[1] + 2 * this.boxheight + this.textoffset) + ")")
+            .text(app.genders.female);
+        this.obj.append('text')
+            .attr("transform", "translate(" + (this.boxwidth + this.offset[0]) + " ," + (2 * this.offset[1] + 3 * this.boxheight + this.textoffset) + ")")
+            .text(app.genders.male);
+    },
+    show: function() {},
+    hide: function() {},
+    update: function() {}
+}
+
+var controls = {
+    anchor: [],
+    offset: [15, 15],
+    height: 50,
+    width: 300,
+    obj: null,
+    fields: [app.modes.population, app.modes.growth, app.modes.population_sqkm, app.modes.growth_sqkm],
+    init: function() {
+        controls.anchor[0] = info.anchor[0] + controls.offset[0];
+        controls.anchor[1] = info.anchor[1] + info.height + controls.offset[1];
+        controls.obj = container.append('form')
+            .attr('class', 'controlpanel')
+            .style('left', controls.anchor[0] + 'px')
+            .style('top', controls.anchor[1] + 'px')
+            .style('height', controls.height + 'px')
+            .style('width', controls.width + 'px');
+
+        controls.obj.append('div').attr('class', 'fline1')
+            .append('input')
+            .attr('type', 'radio')
+            .attr('name', 'set')
+            .attr('value', app.modes.population)
+            .property('checked', app.mode == app.modes.population)
+            .on('change', this.onChangeHandler);
+        d3.select('.fline1')
+            .append('label')
+            .text(controls.fields[0]);
+
+        controls.obj.append('div').attr('class', 'fline2')
+            .append('input')
+            .attr('type', 'radio')
+            .attr('name', 'set')
+            .attr('value', app.modes.growth)
+            .property('checked', app.mode == app.modes.growth)
+            .on('change', this.onChangeHandler);
+        d3.select('.fline2')
+            .append('label')
+            .text(controls.fields[1]);
+
+        controls.obj.append('div').attr('class', 'fline3')
+            .append('input')
+            .attr('type', 'radio')
+            .attr('name', 'set')
+            .attr('value', app.modes.population_sqkm)
+            .property('checked', app.mode == app.modes.population_sqkm)
+            .on('change', this.onChangeHandler);
+        d3.select('.fline3')
+            .append('label')
+            .text(controls.fields[2]);
+
+        controls.obj.append('div').attr('class', 'fline4')
+            .append('input')
+            .attr('type', 'radio')
+            .attr('name', 'set')
+            .attr('value', app.modes.growth_sqkm)
+            .property('checked', app.mode == app.modes.growth_sqkm)
+            .on('change', this.onChangeHandler);
+        d3.select('.fline4')
+            .append('label')
+            .text(controls.fields[3]);
+    },
+    show: function() {},
+    hide: function() {},
+    update: function() {},
+    onChangeHandler: function() {
+        app.mode = this.value;
+        app.focus.year = app.focus.year < dataSets.getActive().minYear ? dataSets.getActive().minYear : app.focus.year;
+        dispatcher.dispatch.radio_change();
+    }
+}
+
 var info = {
-    obj: svg.append('g').attr('class', 'info'),
+    obj: null,
     anchor: [550, 50],
     height: 300,
     width: 350,
     init: function() {
+        info.obj = svg.append('g')
+            .attr('class', 'info')
         info.obj.attr('transform', 'translate(' + info.anchor[0] + ',' + info.anchor[1] + ')');
         info.obj.append('rect')
             .attr('class', 'infobox')
@@ -789,23 +1082,11 @@ var info = {
             .attr('width', info.width);
         info.content.init();
         info.content.display();
+        info.update();
     },
     update: function() {
-        // var base = dataSets.getActive();
         this.content.setTopic(dataSets.getActive().name);
         this.content.setLine(0, 'year: ' + app.focus.year);
-        // var populationSet = null;
-        // var growthSet = null;
-        // if (!app.focus.region && !app.hover.region) {
-        //     // swe
-        //     populationSet = dataSets.population;
-        //     growthSet = dataSets.growth;
-        // } else {
-        //     // region
-        //     var regId = 
-        //     populationSet = dataSets.fetchRegionData
-        // }
-
         this.content.setLine(1, 'population total: ' + this.format(dataSets.query(dataSets.population, app.focus.year, app.genders.total)));
         this.content.setLine(2, 'population female: ' + this.format(dataSets.query(dataSets.population, app.focus.year, app.genders.female)));
         this.content.setLine(3, 'population male: ' + this.format(dataSets.query(dataSets.population, app.focus.year, app.genders.male)));
@@ -814,16 +1095,18 @@ var info = {
         this.content.setLine(6, 'population growth male: ' + this.format(dataSets.query(dataSets.growth, app.focus.year, app.genders.male)));
     },
     format: function(n) {
+        n = this.checkNaN(n);
         if (n >= 10000) {
             return d3.format(".3s")(n)
         }
         return n;
     },
-    events: {
-        // hover: dispatch.on('hover.info', function(_event) {
-        //     // console.log(dataSets.regionNames[_event.region]);
-        // })
+    checkNaN: function(n) {
+        if (isNaN(n))
+            return 'not available';
+        return n;
     },
+    events: {},
     content: {
         anchor: [20, 40],
         offsetToTopic: 30,
@@ -843,8 +1126,6 @@ var info = {
         createLine: function(lineNumber) {
             var yPos = this.anchor[1] + this.offsetToTopic + this.linePadding / 2;
             var yOffset = (info.height - this.anchor[1] - this.offsetToTopic - this.linePadding) / this.numOfLines;
-            // console.log('yPos: ' + yPos);
-            // console.log('yOffset: ' + yOffset);
             info.obj
                 .append('text')
                 .attr('id', 'infoline' + lineNumber)
@@ -870,28 +1151,29 @@ var info = {
 };
 
 var tl = {
-    playState: false, // play/pause toggle
+    playState: AUTOSTART, // play/pause toggle
     previousFrameTime: 0,
     elapsedTime: 0,
     frameDuration: 250,
     init: function() {
         tl.previousFrameTime = 0;
         tl.elapsedTime = 0;
-        tl.button.show();
+        tl.button.init();
+        d3.timer(tl.clock);
     },
     clock: function(currentTime) {
-        tl.elapsedTime = currentTime - tl.previousFrameTime;
-        if (tl.elapsedTime > tl.frameDuration) {
-            tl.previousFrameTime = currentTime;
-            app.focus.year = app.focus.year + 1 > dataSets.getActive().maxYear ? dataSets.getActive().minYear : app.focus.year + 1;
-            dispatch.timer();
+        if (tl.playState) {
+            tl.elapsedTime = currentTime - tl.previousFrameTime;
+            if (tl.elapsedTime > tl.frameDuration) {
+                tl.previousFrameTime = currentTime;
+                app.focus.year = app.focus.year + 1 > dataSets.getActive().maxYear ? dataSets.getActive().minYear : app.focus.year + 1;
+                dispatcher.dispatch.timer();
+            }
         }
-        return (!tl.playState);
+        return (false);
     },
     start: function() {
-        tl.init();
         tl.playState = true;
-        d3.timer(tl.clock);
     },
     stop: function() {
         tl.playState = false;
@@ -900,47 +1182,39 @@ var tl = {
         this.button.update();
     },
     button: {
-        anchor: [200, -200],
-        height: 100,
-        width: 100,
+        anchor: [800, 540],
+        height: 50,
+        width: 80,
         id: 'playpausebutton',
-        text: 'PLAY/PAUSE',
-        spawnContainer: function() {
-
-            d3.select("#sContainer")
-                .append('div')
-                .attr('class', 'controls')
-                .attr('x', 500)
-                .attr('top', -200)
-                .style('width', 111 + 'px')
-                .style('height', 111 + 'px')
+        text: {
+            play: 'PLAY',
+            pause: 'PAUSE'
+        },
+        init: function() {
+            tl.button.anchor[0] = slider.anchor[0] + slider.width - tl.button.width;
+            tl.button.anchor[1] = slider.anchor[1] - tl.button.height;
+            tl.button.show();
         },
         show: function() {
-            // this.spawnContainer();
-            // d3.select(".controls")
-            //     .append('div')
-            // d3.select("#sContainer")
-            svg
+            container
                 .append('button')
                 .attr('id', 'pbutton')
-                // .attr('body', 'press me')
-                .attr('left', 10)
-                .attr('top', -150)
-                .attr("float", "right")
-                .style('height', 50 + 'px')
-                .style('width', 150 + 'px')
+                .style('left', tl.button.anchor[0] + 'px')
+                .style('top', tl.button.anchor[1] + 'px')
+                .style('height', tl.button.height + 'px')
+                .style('width', tl.button.width + 'px')
                 .on('click', this.onClickHandler);
-            console.log('button created');
-
+            tl.button.update();
         },
-        update: function() {},
+        update: function() {
+            d3.select('#pbutton').text(tl.playState ? tl.button.text.pause : tl.button.text.play);
+        },
         hide: function() {},
         onClickHandler: function(e) {
-            console.log('button clicked');
-
+            tl.playState = !tl.playState;
+            tl.button.update();
         }
     }
-
 };
 
 

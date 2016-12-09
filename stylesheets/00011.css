@@ -12,15 +12,9 @@
     font-size: 15px;
 }
 
-
-/*.swe {
-    
-}*/
-
 .boundary {
     fill: none;
     stroke: #3F3F3F;
-    /*stroke-width: 0px;*/
 }
 
 .marked {
@@ -28,13 +22,6 @@
     stroke: #3F3F3F;
     stroke-width: 3px;
 }
-
-
-/*.subdistrict_boundary {
-    fill: none;
-    stroke: #787878;
-    stroke-width: .5px;
-}*/
 
 sup {
     vertical-align: top;
@@ -81,7 +68,6 @@ sup {
     fill: none;
     stroke: #404040;
     stroke-width: 1px;
-    /*stroke-linecap: round;*/
     stroke-dasharray: 1, 2;
     shape-rendering: crispEdges;
 }
@@ -90,8 +76,6 @@ sup {
     fill: none;
     stroke: #3F3F3F;
     stroke-width: 2px;
-    /*stroke-linecap: round;*/
-    /*stroke-dasharray: 1, 2;*/
     shape-rendering: crispEdges;
 }
 
@@ -100,8 +84,6 @@ sup {
     stroke: deepskyblue;
     stroke-width: 3px;
     stroke-linecap: round;
-    /*stroke-dasharray: 1, 2;*/
-    /*shape-rendering: crispEdges;*/
 }
 
 .sliderpath2 {
@@ -109,8 +91,6 @@ sup {
     stroke: orangered;
     stroke-width: 3px;
     stroke-linecap: round;
-    /*stroke-dasharray: 1, 2;*/
-    /*shape-rendering: crispEdges;*/
 }
 
 .sliderpath3 {
@@ -118,12 +98,34 @@ sup {
     stroke: gray;
     stroke-width: 3px;
     stroke-linecap: round;
-    /*stroke-dasharray: 1, 2;*/
-    /*shape-rendering: crispEdges;*/
+}
+
+.legend text {
+    font-size: 15px;
+}
+
+#legend_total {
+    stroke: black;
+    stroke-width: 1px;
+    fill: gray;
+    shape-rendering: crispEdges;
+}
+
+#legend_women {
+    stroke: black;
+    stroke-width: 1px;
+    fill: orangered;
+    shape-rendering: crispEdges;
+}
+
+#legend_men {
+    stroke: black;
+    stroke-width: 1px;
+    fill: deepskyblue;
+    shape-rendering: crispEdges;
 }
 
 .info text {
-    font-family: sans-serif;
     font-size: 18px;
 }
 
@@ -135,22 +137,41 @@ sup {
 }
 
 #infotopic {
-    font-family: sans-serif;
     font-size: 20px;
     font-weight: bold;
 }
 
-.controls {
+.maplegend text {
+    font-size: 18px;
+}
+
+.color_axis text {
+    font-family: sans-serif;
+    font-size: 14px;
+}
+
+.color_axis path,
+.color_axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
+.mlrect,
+.maplegendbox {
+    fill: none;
+    stroke: #020202;
+    stroke-width: 1px;
+    shape-rendering: crispEdges;
+}
+
+.maplegend text {
+    font-size: 20px;
+}
+
+.controlpanel {
     position: absolute;
-    /*display: flex;*/
-    /*flex-flow: row wrap;*/
-    /*min-height: 100px;*/
-    /*margin-top: 20px;*/
-    /*margin-left: auto;*/
-    /*margin-right: auto;*/
-    /*margin-bottom: auto;*/
-    /*padding: 20px 25px 10px 25px;*/
-    background-color: #D0D0D0;
+    font-size: 16px;
 }
 
 .tooltip {
@@ -172,26 +193,16 @@ sup {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-    /*line-height: 155%;*/
 }
 
 #sContainer {
     position: relative;
     width: 1000px;
     height: 900px;
-    /*padding-bottom: 10px;
-    padding-top: 10px;
-    padding-left: 10px;
-    padding-right: 10px;
-    box-shadow: 2px 2px 14px #828282;
-    margin-left: auto;
-    margin-right: auto;*/
 }
 
-#pButton {
+#pbutton {
     position: absolute;
-    top: -100px;
-    left: 100px;
     width: 220px;
     height: 30px;
 }
